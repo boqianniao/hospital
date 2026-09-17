@@ -397,7 +397,7 @@
                     }
                 },
                 goToDetail(id) {
-                    window.location.href = 'doctor-detail.html?doctorId=' + id;
+                    window.location.href = 'doctor-detail.html?id=' + encodeURIComponent(id);
                 },
                 recordHistory(keyword) {
                     if (keyword && Auth.isLogin()) {

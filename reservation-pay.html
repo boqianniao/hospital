@@ -375,13 +375,6 @@
                             <div class="icon">支</div>
                             <div class="label">支付宝</div>
                         </div>
-                        <div 
-                            :class="['pay-option', 'wechat', {selected: payMethod === 'wechat'}]"
-                            @click="payMethod = 'wechat'"
-                        >
-                            <div class="icon">微</div>
-                            <div class="label">微信支付</div>
-                        </div>
                     </div>
                 </div>
                 
@@ -473,8 +466,8 @@
                         return;
                     }
                     this.payButtonDisabled = true;
-                    const payMethod = this.payMethod === 'alipay' ? 1 : 2;
-                    const methodLabel = this.payMethod === 'alipay' ? '支付宝' : '微信支付';
+                    const payMethod = 1;
+                    const methodLabel = '支付宝';
                     http.post('/api/pay/create', {
                         orderNo: this.orderNo,
                         businessType: this.businessType,

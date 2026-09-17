@@ -4,7 +4,8 @@
 
 // 后端 API 基础地址
 axios.defaults.baseURL = 'http://localhost:8080';
-axios.defaults.timeout = 10000;
+// 首次访问时后端可能需要建立数据库连接，给冷启动请求留出完整响应时间。
+axios.defaults.timeout = 20000;
 
 // ---- 请求拦截器：自动携带 token ----
 axios.interceptors.request.use(

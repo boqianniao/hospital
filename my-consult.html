@@ -131,6 +131,22 @@
         .search-item button:hover {
             background-color: #1565c0;
         }
+        .payment-result {
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .payment-result.success {
+            color: #2e7d32;
+            background-color: #e8f5e9;
+            border: 1px solid #a5d6a7;
+        }
+        .payment-result.pending {
+            color: #e65100;
+            background-color: #fff3e0;
+            border: 1px solid #ffcc80;
+        }
         /* 订单列表 */
         .order-list {
             border: 1px solid #e8eef3;
@@ -457,6 +473,9 @@
             <!-- 右侧内容 -->
             <div class="main-content">
                 <div class="page-title">我的咨询</div>
+                <div v-if="paymentResult" :class="['payment-result', paymentResult]">
+                    {{ paymentResult === 'success' ? '支付宝支付成功，订单状态已更新。' : '暂未确认支付结果，请核对订单状态后再决定是否重新支付。' }}
+                </div>
                 
                 <!-- 搜索条件 -->
                 <div class="search-bar">
@@ -474,7 +493,9 @@
                         <label>订单状态：</label>
                         <select v-model="consultStatus">
                             <option value="">全部状态</option>
-                            <option value="pending">待接听</option>
+                            <option value="pending">待支付</option>
+                            <option value="paid">已支付</option>
+                            <option value="ongoing">咨询中</option>
                             <option value="completed">已完成</option>
                             <option value="cancelled">已取消</option>
                         </select>
@@ -507,7 +528,8 @@
                                 v-if="consult.status === 'completed' && !consult.hasReviewed" 
                                 @click="openReviewModal(consult)"
                             >评价医生</button>
-                            <button>查看详情</button>
+                            <button v-if="consult.status === 'pending'" @click="continuePay(consult)">继续支付</button>
+                            <button v-if="consult.status === 'paid' || consult.status === 'ongoing'" @click="completeConsult(consult)">完成咨询</button>
                         </div>
                     </div>
                 </div>
@@ -531,6 +553,10 @@
                                     <div class="review-patient">咨询时长：{{ currentReviewConsult.duration }}分钟</div>
                                 </div>
                             </div>
+                            <label class="review-label">评分</label>
+                            <select v-model.number="reviewRating" class="form-control">
+                                <option v-for="score in [5, 4, 3, 2, 1]" :key="score" :value="score">{{ score }} 分</option>
+                            </select>
                             <label class="review-label">评价内容</label>
                             <textarea 
                                 v-model="reviewContent" 
@@ -577,10 +603,13 @@
                 consultCurrentPage: 1,
                 pageSize: 5,
                 consults: [],
+                paymentResult: '',
                 // 评价相关
                 showReviewModal: false,
                 currentReviewConsult: {},
-                reviewContent: ''
+                reviewContent: '',
+                reviewRating: 5,
+                reviewedOrderIds: {}
             },
             computed: {
                 filteredConsults() {
@@ -703,12 +732,14 @@
                 openReviewModal(consult) {
                     this.currentReviewConsult = consult;
                     this.reviewContent = '';
+                    this.reviewRating = 5;
                     this.showReviewModal = true;
                 },
                 closeReviewModal() {
                     this.showReviewModal = false;
                     this.currentReviewConsult = {};
                     this.reviewContent = '';
+                    this.reviewRating = 5;
                 },
                 submitReview() {
                     if (!this.reviewContent.trim()) {
@@ -716,17 +747,46 @@
                         return;
                     }
                     
-                    // 找到咨询订单并标记为已评价
-                    const consult = this.consults.find(c => c.id === this.currentReviewConsult.id);
-                    if (consult) {
-                        consult.hasReviewed = true;
-                    }
-                    
-                    alert('评价提交成功！');
-                    this.closeReviewModal();
+                    const orderId = this.currentReviewConsult.id;
+                    http.post('/api/reviews', {
+                        orderType: 2,
+                        orderId: orderId,
+                        rating: this.reviewRating,
+                        content: this.reviewContent.trim()
+                    }).then(() => {
+                        const consult = this.consults.find(c => String(c.id) === String(orderId));
+                        if (consult) consult.hasReviewed = true;
+                        this.reviewedOrderIds[String(orderId)] = true;
+                        alert('评价提交成功！');
+                        this.closeReviewModal();
+                    }).catch((err) => {
+                        alert(err.message || '评价提交失败');
+                    });
+                },
+                continuePay(consult) {
+                    window.location.href = 'consult-pay.html?orderNo=' +
+                        encodeURIComponent(consult.orderNo) + '&id=' + encodeURIComponent(consult.id);
+                },
+                completeConsult(consult) {
+                    if (!confirm('确认本次咨询已完成吗？完成后即可评价医生。')) return;
+                    http.put('/api/consults/' + consult.id + '/complete').then(() => {
+                        alert('咨询已完成');
+                        this.loadConsults();
+                    }).catch((err) => {
+                        alert(err.message || '完成咨询失败');
+                    });
                 },
                 searchConsults() {
                     this.consultCurrentPage = 1;
+                },
+                loadMyReviews() {
+                    return http.get('/api/reviews/mine', { pageNum: 1, pageSize: 100 }).then((page) => {
+                        const ids = {};
+                        ((page && page.list) || []).forEach(r => {
+                            if (r.orderType === 2) ids[String(r.orderId)] = true;
+                        });
+                        this.reviewedOrderIds = ids;
+                    });
                 },
                 loadConsults() {
                     http.get('/api/consults', { pageNum: 1, pageSize: 100 }).then((page) => {
@@ -735,10 +795,10 @@
                             id: c.id,
                             orderNo: c.orderNo,
                             doctorName: c.doctorName,
-                            doctorTitle: '', // ConsultVO 未返回职称
-                            department: '',  // ConsultVO 未返回科室
-                            hospitalName: '', // ConsultVO 未返回医院
-                            doctorAvatar: 'img/doctor-male-doc.jpg', // ConsultVO 无头像，用占位图
+                            doctorTitle: c.doctorTitle || '',
+                            department: c.departmentName || '',
+                            hospitalName: c.hospitalName || '',
+                            doctorAvatar: c.doctorAvatar || 'img/doctor-male-doc.jpg',
                             appointmentTime: c.appointmentTime || c.createTime || '',
                             duration: c.duration,
                             amount: c.amount,
@@ -746,7 +806,7 @@
                             statusCode: c.status,
                             statusText: c.statusText,
                             canCancel: c.status === 1 || c.status === 2, // 待支付/已支付可取消
-                            hasReviewed: false
+                            hasReviewed: !!this.reviewedOrderIds[String(c.id)]
                         }));
                         if (this.consultCurrentPage > this.consultTotalPages) {
                             this.consultCurrentPage = this.consultTotalPages || 1;
@@ -758,7 +818,9 @@
             },
             mounted() {
                 if (!Auth.requireLogin()) return;
-                this.loadConsults();
+                const payment = new URLSearchParams(window.location.search).get('payment');
+                if (payment === 'success' || payment === 'pending') this.paymentResult = payment;
+                this.loadMyReviews().catch(() => {}).then(() => this.loadConsults());
             }
         });
     </script>

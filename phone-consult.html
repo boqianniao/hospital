@@ -819,8 +819,7 @@
                         alert('请填写完整的就诊人信息');
                         return;
                     }
-                    const ids = this.patients.map(p => p.id);
-                    const newId = (ids.length ? Math.max.apply(null, ids) : 0) + 1;
+                    const newId = 'local-' + Date.now();
                     this.patients.push({
                         id: newId,
                         name: this.newPatient.name,
