@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <title>搜索医生 - 健康之路在线医疗</title>
     <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <script src="js/auth-interceptor.js"></script>
     <link rel="stylesheet" href="css/common.css">
     <style>
         * {
@@ -397,18 +399,10 @@
                 goToDetail(id) {
                     window.location.href = 'doctor-detail.html?doctorId=' + id;
                 },
-                searchDoctors(keyword) {
-                    if (!keyword) {
-                        this.doctors = this.allDoctors;
-                        return;
+                recordHistory(keyword) {
+                    if (keyword && Auth.isLogin()) {
+                        http.post('/api/search/history?keyword=' + encodeURIComponent(keyword)).catch(function () {});
                     }
-                    keyword = keyword.toLowerCase();
-                    this.doctors = this.allDoctors.filter(d => 
-                        d.name.toLowerCase().includes(keyword) ||
-                        d.department.toLowerCase().includes(keyword) ||
-                        d.hospital.toLowerCase().includes(keyword)
-                    );
-                    this.currentPage = 1;
                 },
                 prevPage() {
                     if (this.currentPage > 1) {
@@ -424,33 +418,27 @@
                     this.currentPage = page;
                 },
                 loadDoctors() {
-                    // 模拟医生数据，与 doctor.html 一致
-                    this.allDoctors = [
-                        { id: 1, name: '张明远', department: '心内科', hospital: '北京协和医院', title: '主任医师', avatar: 'img/doctor-male-doc.jpg', tags: ['高血压', '冠心病'], online: true },
-                        { id: 2, name: '王秀英', department: '神经内科', hospital: '上海瑞金医院', title: '副主任医师', avatar: 'img/doctor-female-doc.jpg', tags: ['头痛', '眩晕'], online: true },
-                        { id: 3, name: '李建国', department: '骨科', hospital: '广州中山医院', title: '主任医师', avatar: 'img/doctor-male-doc.jpg', tags: ['骨折', '关节炎'], online: false },
-                        { id: 4, name: '陈丽华', department: '妇产科', hospital: '杭州浙一医院', title: '主治医师', avatar: 'img/doctor-female-doc.jpg', tags: ['妇科炎症', '月经不调'], online: true },
-                        { id: 5, name: '赵伟东', department: '消化内科', hospital: '武汉同济医院', title: '主任医师', avatar: 'img/doctor-male-doc.jpg', tags: ['胃炎', '肠炎'], online: true },
-                        { id: 6, name: '孙晓敏', department: '儿科', hospital: '成都华西医院', title: '副主任医师', avatar: 'img/doctor-female-doc.jpg', tags: ['感冒', '发热'], online: false },
-                        { id: 7, name: '周志刚', department: '呼吸内科', hospital: '南京鼓楼医院', title: '主任医师', avatar: 'img/doctor-male-doc.jpg', tags: ['肺炎', '支气管炎'], online: true },
-                        { id: 8, name: '吴美玲', department: '皮肤科', hospital: '西安西京医院', title: '主治医师', avatar: 'img/doctor-female-doc.jpg', tags: ['湿疹', '荨麻疹'], online: true },
-                        { id: 9, name: '郑海涛', department: '眼科', hospital: '天津总医院', title: '主任医师', avatar: 'img/doctor-male-doc.jpg', tags: ['白内障', '青光眼'], online: false },
-                        { id: 10, name: '冯婉清', department: '口腔科', hospital: '北京天坛医院', title: '副主任医师', avatar: 'img/doctor-female-doc.jpg', tags: ['牙周炎', '口腔溃疡'], online: true },
-                        { id: 11, name: '林志豪', department: '泌尿外科', hospital: '上海华山医院', title: '主任医师', avatar: 'img/doctor-male-doc.jpg', tags: ['结石', '前列腺炎'], online: true },
-                        { id: 12, name: '韩静怡', department: '内分泌科', hospital: '广东省人民医院', title: '主治医师', avatar: 'img/doctor-female-doc.jpg', tags: ['糖尿病', '甲亢'], online: false },
-                        { id: 13, name: '黄文博', department: '肿瘤科', hospital: '南京鼓楼医院', title: '主任医师', avatar: 'img/doctor-male-doc.jpg', tags: ['化疗', '放疗'], online: true },
-                        { id: 14, name: '许雅婷', department: '中医科', hospital: '杭州浙一医院', title: '副主任医师', avatar: 'img/doctor-female-doc.jpg', tags: ['调理', '针灸'], online: true },
-                        { id: 15, name: '马晓峰', department: '心外科', hospital: '武汉同济医院', title: '主任医师', avatar: 'img/doctor-male-doc.jpg', tags: ['搭桥', '支架'], online: false }
-                    ];
-                    this.doctors = [...this.allDoctors];
+                    http.get('/api/search/doctors', { keyword: this.keyword || '', pageNum: 1, pageSize: 100 }).then((page) => {
+                        const list = (page && page.list) || [];
+                        this.doctors = list.map((d) => ({
+                            id: d.id,
+                            name: d.name,
+                            department: d.expertise || '',
+                            hospital: d.intro || '',
+                            title: d.title,
+                            avatar: d.avatar
+                        }));
+                        this.allDoctors = this.doctors;
+                        this.currentPage = 1;
+                        this.recordHistory(this.keyword);
+                    }).catch((err) => {
+                        alert(err.message || '搜索失败');
+                    });
                 }
             },
             mounted() {
                 this.keyword = this.getUrlParam('keyword') || '';
                 this.loadDoctors();
-                if (this.keyword) {
-                    this.searchDoctors(this.keyword);
-                }
             }
         });
     </script>

@@ -407,6 +407,9 @@
         new Vue({
             el: '#app',
             data: {
+                consultId: '',
+                businessType: 2, // 2=咨询
+                payButtonDisabled: false,
                 orderNo: '',
                 doctorName: '',
                 doctorTitle: '',
@@ -427,28 +430,72 @@
                     }
                     return amount;
                 },
-                submitPay() {
-                    const params = new URLSearchParams({
-                        orderNo: this.orderNo,
-                        doctorName: this.doctorName,
-                        doctorTitle: this.doctorTitle,
-                        doctorDepartment: this.doctorDepartment,
-                        patientName: this.patientName,
-                        patientPhone: this.patientPhone,
-                        amount: this.amount,
-                        payMethod: this.payMethod === 'alipay' ? '支付宝' : '微信支付'
+                loadPayInfo() {
+                    this.consultId = this.getUrlParam('id');
+                    this.orderNo = this.getUrlParam('orderNo') || '';
+                    if (!this.consultId) {
+                        alert('缺少订单信息');
+                        return;
+                    }
+                    http.get('/api/consults/' + this.consultId).then((c) => {
+                        this.orderNo = c.orderNo;
+                        this.doctorName = c.doctorName;
+                        this.patientName = c.patientName;
+                        this.patientPhone = c.patientPhone;
+                        this.amount = Number(c.amount);
+                        if (c.doctorId) {
+                            http.get('/api/doctors/' + c.doctorId).then((d) => {
+                                this.doctorTitle = d.title;
+                                this.doctorDepartment = d.departmentName;
+                            }).catch(() => {});
+                        }
+                    }).catch((err) => {
+                        alert(err.message || '加载订单失败');
                     });
-                    window.location.href = 'consult-success.html?' + params.toString();
+                },
+                submitPay() {
+                    if (this.payButtonDisabled) return;
+                    this.payButtonDisabled = true;
+                    const payMethod = this.payMethod === 'alipay' ? 1 : 2;
+                    const methodLabel = this.payMethod === 'alipay' ? '支付宝' : '微信支付';
+                    http.post('/api/pay/create', {
+                        orderNo: this.orderNo,
+                        businessType: this.businessType,
+                        payMethod: payMethod
+                    }).then((vo) => {
+                        if (vo.mock === true) {
+                            return http.post(vo.mockNotifyUrl).then(() => {
+                                this.goSuccess(methodLabel);
+                            });
+                        }
+                        if (vo.payForm) {
+                            const box = document.createElement('div');
+                            box.style.display = 'none';
+                            box.innerHTML = vo.payForm;
+                            document.body.appendChild(box);
+                            const form = box.querySelector('form');
+                            if (form) {
+                                form.submit();
+                            } else {
+                                document.write(vo.payForm);
+                            }
+                            return;
+                        }
+                        throw new Error('支付发起失败');
+                    }).catch((err) => {
+                        this.payButtonDisabled = false;
+                        alert(err.message || '支付失败');
+                    });
+                },
+                goSuccess(methodLabel) {
+                    window.location.href = 'consult-success.html?id=' + this.consultId +
+                        '&orderNo=' + encodeURIComponent(this.orderNo) +
+                        '&payMethod=' + encodeURIComponent(methodLabel);
                 }
             },
             mounted() {
-                this.orderNo = 'CONSULT' + Date.now() + 'A26';
-                this.doctorName = '张明远';
-                this.doctorTitle = '主任医师';
-                this.doctorDepartment = '心内科';
-                this.patientName = '李小明';
-                this.patientPhone = '138****5678';
-                this.amount = 100.00;
+                if (!Auth.requireLogin()) return;
+                this.loadPayInfo();
             }
         });
     </script>

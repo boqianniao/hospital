@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <title>我的消息 - 健康之路在线医疗</title>
     <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <script src="js/auth-interceptor.js"></script>
     <link rel="stylesheet" href="css/common.css">
     <style>
         * {
@@ -362,58 +364,30 @@
                 markAsRead(id) {
                     const message = this.messages.find(m => m.id === id);
                     if (message && !message.isRead) {
-                        message.isRead = true;
+                        http.put('/api/messages/' + id + '/read').then(() => {
+                            message.isRead = 1;
+                        }).catch((err) => {
+                            alert(err.message || '操作失败');
+                        });
                     }
                 },
                 loadMessages() {
-                    // 模拟加载消息数据
-                    this.messages = [
-                        { 
-                            id: 1, 
-                            title: '预约成功通知', 
-                            content: '您预约的北京协和医院心内科张明远医生的号源已成功，请按时前往就诊。就诊时间：2024-03-20 10:00', 
-                            time: '2024-03-15 09:30',
-                            isRead: false
-                        },
-                        { 
-                            id: 2, 
-                            title: '医生回复提醒', 
-                            content: '您咨询的关于高血压用药问题，王建国医生已回复，请及时查看。', 
-                            time: '2024-03-14 16:20',
-                            isRead: false
-                        },
-                        { 
-                            id: 3, 
-                            title: '健康资讯推荐', 
-                            content: '春季是呼吸道疾病高发期，请注意做好防护措施，保持室内通风，适当锻炼增强体质。', 
-                            time: '2024-03-13 10:00',
-                            isRead: true
-                        },
-                        { 
-                            id: 4, 
-                            title: '评价提醒', 
-                            content: '您的就诊已完成，欢迎对医生进行评价，您的反馈对我们非常重要。', 
-                            time: '2024-03-12 15:45',
-                            isRead: true
-                        },
-                        { 
-                            id: 5, 
-                            title: '系统维护通知', 
-                            content: '系统将于2024-03-18 22:00-24:00进行维护升级，期间可能影响部分功能使用，请提前做好安排。', 
-                            time: '2024-03-11 08:00',
-                            isRead: true
-                        },
-                        { 
-                            id: 6, 
-                            title: '挂号成功通知', 
-                            content: '您预约的上海瑞金医院呼吸内科李秀华医生的号源已成功，请按时前往就诊。', 
-                            time: '2024-03-10 11:30',
-                            isRead: true
-                        }
-                    ];
+                    http.get('/api/messages', { pageNum: 1, pageSize: 100 }).then((page) => {
+                        const list = (page && page.list) || [];
+                        this.messages = list.map((m) => ({
+                            id: m.id,
+                            title: m.title,
+                            content: m.content,
+                            time: m.createTime,
+                            isRead: m.isRead
+                        }));
+                    }).catch((err) => {
+                        alert(err.message || '加载失败');
+                    });
                 }
             },
             mounted() {
+                if (!Auth.requireLogin()) return;
                 this.loadMessages();
             }
         });

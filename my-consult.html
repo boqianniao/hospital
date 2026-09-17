@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <title>我的咨询 - 健康之路在线医疗</title>
     <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <script src="js/auth-interceptor.js"></script>
     <link rel="stylesheet" href="css/common.css">
     <style>
         * {
@@ -499,7 +501,7 @@
                             </div>
                         </div>
                         <div class="order-footer">
-                            <button v-if="consult.status === 'pending'">取消预约</button>
+                            <button v-if="consult.canCancel" @click="cancelConsult(consult)">取消预约</button>
                             <button v-if="consult.status === 'completed'">再次咨询</button>
                             <button 
                                 v-if="consult.status === 'completed' && !consult.hasReviewed" 
@@ -675,11 +677,27 @@
                 },
                 getConsultStatusText(status) {
                     const statusMap = {
-                        pending: '待接听',
+                        pending: '待支付',
+                        paid: '已支付',
+                        ongoing: '咨询中',
                         completed: '已完成',
                         cancelled: '已取消'
                     };
                     return statusMap[status] || status;
+                },
+                // 数字状态 -> 前端样式/文案键
+                statusClass(code) {
+                    return { 1: 'pending', 2: 'paid', 3: 'ongoing', 4: 'completed', 5: 'cancelled' }[code] || 'pending';
+                },
+                // 取消咨询
+                cancelConsult(consult) {
+                    if (!confirm('确定要取消该咨询吗？')) return;
+                    http.put('/api/consults/' + consult.id + '/cancel').then(() => {
+                        alert('已取消');
+                        this.loadConsults();
+                    }).catch((err) => {
+                        alert(err.message || '取消失败');
+                    });
                 },
                 // 评价相关方法
                 openReviewModal(consult) {
@@ -711,95 +729,35 @@
                     this.consultCurrentPage = 1;
                 },
                 loadConsults() {
-                    this.consults = [
-                        { 
-                            id: 1, 
-                            orderNo: 'DH20240315001', 
-                            doctorName: '张明远', 
-                            doctorTitle: '主任医师', 
-                            department: '心内科',
-                            hospitalName: '北京协和医院',
-                            doctorAvatar: 'img/doctor-male-doc.jpg',
-                            appointmentTime: '2024-03-20 10:00',
-                            duration: 30,
-                            amount: 199,
-                            status: 'pending',
+                    http.get('/api/consults', { pageNum: 1, pageSize: 100 }).then((page) => {
+                        const list = (page && page.list) || [];
+                        this.consults = list.map(c => ({
+                            id: c.id,
+                            orderNo: c.orderNo,
+                            doctorName: c.doctorName,
+                            doctorTitle: '', // ConsultVO 未返回职称
+                            department: '',  // ConsultVO 未返回科室
+                            hospitalName: '', // ConsultVO 未返回医院
+                            doctorAvatar: 'img/doctor-male-doc.jpg', // ConsultVO 无头像，用占位图
+                            appointmentTime: c.appointmentTime || c.createTime || '',
+                            duration: c.duration,
+                            amount: c.amount,
+                            status: this.statusClass(c.status),
+                            statusCode: c.status,
+                            statusText: c.statusText,
+                            canCancel: c.status === 1 || c.status === 2, // 待支付/已支付可取消
                             hasReviewed: false
-                        },
-                        { 
-                            id: 2, 
-                            orderNo: 'DH20240314002', 
-                            doctorName: '李秀华', 
-                            doctorTitle: '副主任医师', 
-                            department: '呼吸内科',
-                            hospitalName: '上海瑞金医院',
-                            doctorAvatar: 'img/doctor-female-doc.jpg',
-                            appointmentTime: '2024-03-18 15:30',
-                            duration: 20,
-                            amount: 149,
-                            status: 'pending',
-                            hasReviewed: false
-                        },
-                        { 
-                            id: 3, 
-                            orderNo: 'DH20240313003', 
-                            doctorName: '王建国', 
-                            doctorTitle: '主任医师', 
-                            department: '消化内科',
-                            hospitalName: '广州中山医院',
-                            doctorAvatar: 'img/doctor-male-doc.jpg',
-                            appointmentTime: '2024-03-15 09:00',
-                            duration: 30,
-                            amount: 199,
-                            status: 'completed',
-                            hasReviewed: false
-                        },
-                        { 
-                            id: 4, 
-                            orderNo: 'DH20240312004', 
-                            doctorName: '陈美玲', 
-                            doctorTitle: '主治医师', 
-                            department: '肾内科',
-                            hospitalName: '杭州浙一医院',
-                            doctorAvatar: 'img/doctor-female-doc.jpg',
-                            appointmentTime: '2024-03-12 14:00',
-                            duration: 20,
-                            amount: 149,
-                            status: 'completed',
-                            hasReviewed: true
-                        },
-                        { 
-                            id: 5, 
-                            orderNo: 'DH20240311005', 
-                            doctorName: '张伟民', 
-                            doctorTitle: '主任医师', 
-                            department: '内分泌科',
-                            hospitalName: '北京协和医院',
-                            doctorAvatar: 'img/doctor-male-doc.jpg',
-                            appointmentTime: '2024-03-10 11:00',
-                            duration: 30,
-                            amount: 199,
-                            status: 'cancelled',
-                            hasReviewed: false
-                        },
-                        { 
-                            id: 6, 
-                            orderNo: 'DH20240310006', 
-                            doctorName: '刘芳华', 
-                            doctorTitle: '副主任医师', 
-                            department: '血液科',
-                            hospitalName: '上海瑞金医院',
-                            doctorAvatar: 'img/doctor-female-doc.jpg',
-                            appointmentTime: '2024-03-08 16:00',
-                            duration: 20,
-                            amount: 149,
-                            status: 'completed',
-                            hasReviewed: false
+                        }));
+                        if (this.consultCurrentPage > this.consultTotalPages) {
+                            this.consultCurrentPage = this.consultTotalPages || 1;
                         }
-                    ];
+                    }).catch((err) => {
+                        alert(err.message || '加载咨询记录失败');
+                    });
                 }
             },
             mounted() {
+                if (!Auth.requireLogin()) return;
                 this.loadConsults();
             }
         });

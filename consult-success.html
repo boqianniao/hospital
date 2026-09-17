@@ -5,6 +5,7 @@
     <title>咨询成功 - 健康之路在线医疗</title>
     <script src="js/vue.js"></script>
     <script src="js/axios-0.18.0.js"></script>
+    <script src="js/auth-interceptor.js"></script>
     <link rel="stylesheet" href="css/common.css">
     <style>
         * {
@@ -244,19 +245,47 @@
         new Vue({
             el: '#app',
             data: {
-                orderNo: 'CONSULT20260625A26',
-                doctorName: '张明远',
-                doctorTitle: '主任医师',
-                doctorDepartment: '心内科',
-                patientName: '李小明',
-                patientPhone: '138****5678',
-                amount: 100.00,
+                orderNo: '',
+                doctorName: '',
+                doctorTitle: '',
+                doctorDepartment: '',
+                patientName: '',
+                patientPhone: '',
+                amount: 0,
                 payMethod: '支付宝'
             },
             methods: {
+                getUrlParam(name) {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    return urlParams.get(name) || '';
+                },
+                loadData() {
+                    const id = this.getUrlParam('id');
+                    this.orderNo = this.getUrlParam('orderNo');
+                    this.payMethod = this.getUrlParam('payMethod') || '支付宝';
+                    if (!id) return;
+                    http.get('/api/consults/' + id).then((c) => {
+                        this.orderNo = c.orderNo;
+                        this.doctorName = c.doctorName;
+                        this.patientName = c.patientName;
+                        this.patientPhone = c.patientPhone;
+                        this.amount = Number(c.amount);
+                        if (c.doctorId) {
+                            http.get('/api/doctors/' + c.doctorId).then((d) => {
+                                this.doctorTitle = d.title;
+                                this.doctorDepartment = d.departmentName;
+                            }).catch(() => {});
+                        }
+                    }).catch((err) => {
+                        alert(err.message || '加载订单失败');
+                    });
+                },
                 // 格式化金额
                 formatAmount(amount) {
-                    return amount.toFixed(2);
+                    if (typeof amount === 'number') {
+                        return amount.toFixed(2);
+                    }
+                    return amount;
                 },
                 // 返回首页
                 goBack() {
@@ -266,6 +295,10 @@
                 goToConsult() {
                     window.location.href = 'my-consult.html';
                 }
+            },
+            mounted() {
+                if (!Auth.requireLogin()) return;
+                this.loadData();
             }
         });
     </script>

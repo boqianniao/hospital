@@ -5,6 +5,7 @@
     <title>在线医院预约挂号</title>
     <script src="js/vue.js"></script>
     <script src="js/axios-0.18.0.js"></script>
+    <script src="js/auth-interceptor.js"></script>
     <link rel="stylesheet" href="css/common.css">
     <style>
         * {
@@ -469,39 +470,58 @@
                     { src: 'img/banner_06.png', title: 'banner2' },
                     { src: 'img/banner_07.png', title: 'banner3' }
                 ],
-                hospitals: [
-                    { id: 1, name: '北京协和医院', address: '北京市东城区东单北大街', level: '三级甲等', image: 'img/hospital_100001977.jpg' },
-                    { id: 2, name: '上海瑞金医院', address: '上海市黄浦区瑞金二路', level: '三级甲等', image: 'img/hospital_14616536073112.jpg' },
-                    { id: 3, name: '广州中山医院', address: '广州市越秀区东风西路', level: '三级甲等', image: 'img/hospital_16043929044175.jpg' },
-                    { id: 4, name: '杭州浙一医院', address: '杭州市上城区庆春路', level: '三级甲等', image: 'img/hospital_16195932543164.png' }
-                ],
-                doctors: [
-                    { id: 1, name: '张明远', title: '主任医师', department: '心内科', hospital: '北京协和医院', hospitalLevel: '三甲', experience: '30年', avatar: 'img/doctor-male-doc.jpg', goodAt: '冠心病、高血压、心律失常等心血管疾病的诊治', tags: ['医保定点', '三甲医院'] },
-                    { id: 2, name: '李晓华', title: '副主任医师', department: '妇产科', hospital: '上海瑞金医院', hospitalLevel: '三甲', experience: '20年', avatar: 'img/doctor-female-doc.jpg', goodAt: '高危妊娠、妇科肿瘤、微创手术', tags: ['医保定点', '三甲医院'] },
-                    { id: 3, name: '王建国', title: '主任医师', department: '骨科', hospital: '广州中山医院', hospitalLevel: '三甲', experience: '25年', avatar: 'img/doctor-male-doc.jpg', goodAt: '脊柱侧弯、椎间盘突出、关节置换', tags: ['医保定点', '三甲医院'] },
-                    { id: 4, name: '陈美玲', title: '副主任医师', department: '儿科', hospital: '杭州浙一医院', hospitalLevel: '三甲', experience: '15年', avatar: 'img/doctor-female-doc.jpg', goodAt: '小儿呼吸、哮喘、过敏性疾病', tags: ['医保定点', '三甲医院'] },
-                    { id: 5, name: '刘志强', title: '主任医师', department: '神经内科', hospital: '北京协和医院', hospitalLevel: '三甲', experience: '28年', avatar: 'img/doctor-male-doc.jpg', goodAt: '脑血管病、帕金森、癫痫、头痛', tags: ['医保定点', '三甲医院'] }
-                ],
-                diseases: [
-                    { id: 1, name: '高血压', count: '12.5万', icon: '🩺' },
-                    { id: 2, name: '糖尿病', count: '9.8万', icon: '💉' },
-                    { id: 3, name: '冠心病', count: '8.2万', icon: '❤️' },
-                    { id: 4, name: '感冒发烧', count: '25.6万', icon: '🤒' },
-                    { id: 5, name: '颈椎病', count: '15.3万', icon: '🪧' },
-                    { id: 6, name: '关节炎', count: '7.9万', icon: '🦵' },
-                    { id: 7, name: '皮肤病', count: '6.4万', icon: '🧴' },
-                    { id: 8, name: '胃病', count: '11.2万', icon: '🫀' }
-                ],
-                articles: [
-                    { id: 1, title: '春季养生指南：如何预防春季常见病', summary: '春季是万物复苏的季节，但也是各种疾病的高发期。本文为您介绍春季养生的要点和常见病的预防方法，帮助您和家人健康度过春天。', category: '肿瘤内科', date: '2024-03-15 10:00:00', views: 2356, image: 'img/health_01.jpeg' },
-                    { id: 2, title: '高血压患者的日常饮食注意事项', summary: '高血压是一种常见的慢性病，合理的饮食对于控制血压至关重要。本文详细介绍高血压患者的饮食原则和禁忌，帮助您科学管理血压。', category: '心内科', date: '2024-03-14 09:30:00', views: 1890, image: 'img/health_02.jpeg' },
-                    { id: 3, title: '儿童疫苗接种全攻略', summary: '疫苗接种是保护儿童健康的重要手段。本文为家长们整理了儿童疫苗接种的时间表、注意事项和常见问题解答。', category: '儿科', date: '2024-03-13 14:00:00', views: 3201, image: 'img/health_03.jpeg' },
-                    { id: 4, title: '上班族如何预防颈椎病', summary: '长时间坐在电脑前工作的上班族，颈椎健康问题日益突出。本文为您介绍简单有效的颈椎保健方法和日常锻炼建议。', category: '骨科', date: '2024-03-12 11:00:00', views: 4521, image: 'img/health_01.jpeg' }
-                ]
+                hospitals: [],
+                doctors: [],
+                diseases: [],
+                articles: []
             },
             methods: {
                 handleNavChange(nav) {
                     this.activeNav = nav;
+                },
+                // 推荐医院（取前 4 条）
+                loadHospitals() {
+                    http.get('/api/hospitals', { pageNum: 1, pageSize: 4 }).then((data) => {
+                        this.hospitals = (data && data.list) || [];
+                    }).catch(err => alert(err.message || '加载失败'));
+                },
+                // 在线问诊医生（取前 5 条，做字段映射）
+                loadDoctors() {
+                    http.get('/api/doctors', { pageNum: 1, pageSize: 5 }).then((data) => {
+                        this.doctors = ((data && data.list) || []).map(vo => ({
+                            id: vo.id,
+                            name: vo.name,
+                            title: vo.title,
+                            avatar: vo.avatar,
+                            hospital: vo.hospitalName,
+                            department: vo.departmentName
+                        }));
+                    }).catch(err => alert(err.message || '加载失败'));
+                },
+                // 常见疾病（取前 8 条；后端无 icon 字段，用默认图标）
+                loadDiseases() {
+                    http.get('/api/diseases', { pageNum: 1, pageSize: 8 }).then((data) => {
+                        this.diseases = ((data && data.list) || []).map(vo => ({
+                            id: vo.id,
+                            name: vo.name,
+                            count: vo.followCount,
+                            icon: '🩺'
+                        }));
+                    }).catch(err => alert(err.message || '加载失败'));
+                },
+                // 健康科普文章（取前 4 条，做字段映射）
+                loadArticles() {
+                    http.get('/api/articles', { pageNum: 1, pageSize: 4 }).then((data) => {
+                        this.articles = ((data && data.list) || []).map(vo => ({
+                            id: vo.id,
+                            title: vo.title,
+                            summary: vo.summary,
+                            image: vo.image,
+                            views: vo.views,
+                            category: vo.departmentName,
+                            date: vo.publishTime
+                        }));
+                    }).catch(err => alert(err.message || '加载失败'));
                 }
             },
             mounted() {
@@ -509,6 +529,11 @@
                 setInterval(() => {
                     this.currentBanner = (this.currentBanner + 1) % this.banners.length;
                 }, 4000);
+                // 加载首页聚合数据
+                this.loadHospitals();
+                this.loadDoctors();
+                this.loadDiseases();
+                this.loadArticles();
             }
         });
     </script>

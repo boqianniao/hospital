@@ -44,12 +44,11 @@ Vue.component('header-component', {
         };
     },
     mounted() {
-        // 检查登录状态（从localStorage获取）
-        const userInfo = localStorage.getItem('userInfo');
-        if (userInfo) {
-            const user = JSON.parse(userInfo);
+        // 检查登录状态（统一走 Auth）
+        if (window.Auth && Auth.isLogin()) {
+            const user = Auth.user() || {};
             this.isLoggedIn = true;
-            this.userPhone = this.formatPhone(user.phone);
+            this.userPhone = this.formatPhone(user.phone) || user.username || '用户';
         }
     },
     methods: {
@@ -63,10 +62,12 @@ Vue.component('header-component', {
             }
         },
         handleLogout() {
-            localStorage.removeItem('userInfo');
-            this.isLoggedIn = false;
-            this.userPhone = '';
-            window.location.href = 'index.html';
+            const done = () => { window.location.href = 'index.html'; };
+            if (window.Auth) {
+                Auth.logout().then(done, done);
+            } else {
+                done();
+            }
         }
     }
 });

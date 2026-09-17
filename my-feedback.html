@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <title>我的反馈 - 健康之路在线医疗</title>
     <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <script src="js/auth-interceptor.js"></script>
     <link rel="stylesheet" href="css/common.css">
     <style>
         * {
@@ -604,12 +606,12 @@
                 },
                 getTypeText(type) {
                     const types = {
-                        system: '系统问题',
-                        service: '服务问题',
-                        doctor: '医生问题',
-                        other: '其他问题'
+                        1: '系统问题',
+                        2: '服务问题',
+                        3: '医生问题',
+                        4: '其他问题'
                     };
-                    return types[type] || type;
+                    return types[type] || '其他问题';
                 },
                 getStatusText(status) {
                     return status === 'pending' ? '待处理' : '已回复';
@@ -645,21 +647,19 @@
                         return;
                     }
                     
-                    const newFeedback = {
-                        id: Date.now(),
-                        type: this.formData.type,
+                    http.post('/api/feedbacks', {
+                        feedbackType: parseInt(this.formData.type, 10),
                         content: this.formData.content,
-                        images: [...this.formData.images],
-                        status: 'pending',
-                        time: new Date().toLocaleString('zh-CN'),
-                        reply: '',
-                        replyTime: ''
-                    };
-                    
-                    this.feedbacks.unshift(newFeedback);
-                    alert('反馈提交成功！');
-                    this.resetForm();
-                    this.showAddForm = false;
+                        images: this.formData.images.length ? this.formData.images.join(',') : null
+                    }).then(() => {
+                        alert('反馈提交成功！');
+                        this.resetForm();
+                        this.showAddForm = false;
+                        this.currentPage = 1;
+                        this.loadFeedbacks();
+                    }).catch((err) => {
+                        alert(err.message || '提交失败');
+                    });
                 },
                 resetForm() {
                     this.formData = {
@@ -669,72 +669,25 @@
                     };
                 },
                 loadFeedbacks() {
-                    // 模拟加载反馈数据
-                    this.feedbacks = [
-                        { 
-                            id: 1, 
-                            type: 'service', 
-                            content: '我在预约挂号时遇到了问题，页面一直显示加载中，无法完成预约操作。希望能够尽快修复这个问题。', 
-                            images: [],
-                            status: 'replied',
-                            time: '2024-03-15 10:30',
-                            reply: '您好，感谢您的反馈！我们已经收到您的问题，技术部门正在处理中，预计今天下午可以修复。给您带来不便，敬请谅解！',
-                            replyTime: '2024-03-15 14:20'
-                        },
-                        { 
-                            id: 2, 
-                            type: 'doctor', 
-                            content: '王建国医生的服务态度非常好，问诊也很详细，希望医院能多一些这样的好医生！', 
-                            images: [],
-                            status: 'replied',
-                            time: '2024-03-14 16:45',
-                            reply: '感谢您的肯定！我们会将您的反馈转达给王医生，也会继续努力提升医疗服务质量。',
-                            replyTime: '2024-03-14 17:30'
-                        },
-                        { 
-                            id: 3, 
-                            type: 'system', 
-                            content: '建议在个人中心增加一个快捷预约的功能，这样可以更方便地预约复诊。', 
-                            images: [],
-                            status: 'pending',
-                            time: '2024-03-13 09:20',
-                            reply: '',
-                            replyTime: ''
-                        },
-                        { 
-                            id: 4, 
-                            type: 'other', 
-                            content: '医院的停车场太小了，每次来都找不到停车位，希望能改善一下停车问题。', 
-                            images: [],
-                            status: 'pending',
-                            time: '2024-03-12 11:15',
-                            reply: '',
-                            replyTime: ''
-                        },
-                        { 
-                            id: 5, 
-                            type: 'service', 
-                            content: '在线咨询回复速度有点慢，有时候等了很久都没有回复，希望能提高响应效率。', 
-                            images: [],
-                            status: 'replied',
-                            time: '2024-03-11 15:00',
-                            reply: '您好，关于在线咨询响应慢的问题，我们已经增加了医生排班人数，后续会优化响应速度。',
-                            replyTime: '2024-03-11 16:30'
-                        },
-                        { 
-                            id: 6, 
-                            type: 'system', 
-                            content: '希望能增加手机App版本，这样使用起来更方便。', 
-                            images: [],
-                            status: 'pending',
-                            time: '2024-03-10 08:30',
-                            reply: '',
-                            replyTime: ''
-                        }
-                    ];
+                    http.get('/api/feedbacks', { pageNum: 1, pageSize: 100 }).then((page) => {
+                        const list = (page && page.list) || [];
+                        this.feedbacks = list.map((f) => ({
+                            id: f.id,
+                            type: f.feedbackType,
+                            content: f.content,
+                            images: f.images ? f.images.split(',') : [],
+                            status: f.status === 1 ? 'pending' : 'replied',
+                            time: f.createTime,
+                            reply: f.replyContent || '',
+                            replyTime: f.replyTime || ''
+                        }));
+                    }).catch((err) => {
+                        alert(err.message || '加载失败');
+                    });
                 }
             },
             mounted() {
+                if (!Auth.requireLogin()) return;
                 this.loadFeedbacks();
             }
         });

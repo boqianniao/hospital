@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <title>搜索医院 - 健康之路在线医疗</title>
     <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <script src="js/auth-interceptor.js"></script>
     <link rel="stylesheet" href="css/common.css">
     <style>
         * {
@@ -383,17 +385,10 @@
                 goToDetail(id) {
                     window.location.href = 'hospital-detail.html?hospitalId=' + id;
                 },
-                searchHospitals(keyword) {
-                    if (!keyword) {
-                        this.hospitals = this.allHospitals;
-                        return;
+                recordHistory(keyword) {
+                    if (keyword && Auth.isLogin()) {
+                        http.post('/api/search/history?keyword=' + encodeURIComponent(keyword)).catch(function () {});
                     }
-                    keyword = keyword.toLowerCase();
-                    this.hospitals = this.allHospitals.filter(h => 
-                        h.name.toLowerCase().includes(keyword) ||
-                        h.address.toLowerCase().includes(keyword)
-                    );
-                    this.currentPage = 1;
                 },
                 prevPage() {
                     if (this.currentPage > 1) {
@@ -409,30 +404,26 @@
                     this.currentPage = page;
                 },
                 loadHospitals() {
-                    // 模拟医院数据，与 hospital.html 一致
-                    this.allHospitals = [
-                        { id: 1, name: '北京协和医院', address: '北京市东城区东单北大街', level: '三级甲等', image: 'img/hospital_100001977.jpg', tags: ['医保定点', '全国重点'] },
-                        { id: 2, name: '上海瑞金医院', address: '上海市黄浦区瑞金二路', level: '三级甲等', image: 'img/hospital_14616536073112.jpg', tags: ['医保定点', '教学医院'] },
-                        { id: 3, name: '广州中山医院', address: '广州市越秀区东风西路', level: '三级甲等', image: 'img/hospital_16043929044175.jpg', tags: ['医保定点'] },
-                        { id: 4, name: '杭州浙一医院', address: '杭州市上城区庆春路', level: '三级甲等', image: 'img/hospital_16195932543164.png', tags: ['医保定点', '三甲医院'] },
-                        { id: 5, name: '北京天坛医院', address: '北京市丰台区南四环西路', level: '三级甲等', image: 'img/hospital_100001977.jpg', tags: ['神经科重点'] },
-                        { id: 6, name: '上海华山医院', address: '上海市静安区乌鲁木齐中路', level: '三级甲等', image: 'img/hospital_14616536073112.jpg', tags: ['全国重点'] },
-                        { id: 7, name: '广东省人民医院', address: '广州市越秀区中山二路', level: '三级甲等', image: 'img/hospital_16043929044175.jpg', tags: ['医保定点'] },
-                        { id: 8, name: '南京鼓楼医院', address: '南京市鼓楼区中山路', level: '三级甲等', image: 'img/hospital_16195932543164.png', tags: ['教学医院'] },
-                        { id: 9, name: '武汉同济医院', address: '武汉市硚口区解放大道', level: '三级甲等', image: 'img/hospital_100001977.jpg', tags: ['全国重点'] },
-                        { id: 10, name: '成都华西医院', address: '成都市武侯区国学巷', level: '三级甲等', image: 'img/hospital_14616536073112.jpg', tags: ['全国重点'] },
-                        { id: 11, name: '西安西京医院', address: '西安市新城区长乐西路', level: '三级甲等', image: 'img/hospital_16043929044175.jpg', tags: ['军队医院'] },
-                        { id: 12, name: '天津总医院', address: '天津市和平区鞍山道', level: '三级甲等', image: 'img/hospital_16195932543164.png', tags: ['医保定点'] }
-                    ];
-                    this.hospitals = [...this.allHospitals];
+                    http.get('/api/search/hospitals', { keyword: this.keyword || '', pageNum: 1, pageSize: 100 }).then((page) => {
+                        const list = (page && page.list) || [];
+                        this.hospitals = list.map((h) => ({
+                            id: h.id,
+                            name: h.name,
+                            address: h.address,
+                            level: h.level,
+                            image: h.image
+                        }));
+                        this.allHospitals = this.hospitals;
+                        this.currentPage = 1;
+                        this.recordHistory(this.keyword);
+                    }).catch((err) => {
+                        alert(err.message || '搜索失败');
+                    });
                 }
             },
             mounted() {
                 this.keyword = this.getUrlParam('keyword') || '';
                 this.loadHospitals();
-                if (this.keyword) {
-                    this.searchHospitals(this.keyword);
-                }
             }
         });
     </script>

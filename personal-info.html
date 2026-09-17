@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <title>个人资料 - 健康之路在线医疗</title>
     <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <script src="js/auth-interceptor.js"></script>
     <link rel="stylesheet" href="css/common.css">
     <style>
         * {
@@ -380,24 +382,28 @@
                         alert('请输入姓名');
                         return;
                     }
-                    if (!this.formData.birthday) {
-                        alert('请选择生日');
-                        return;
+                    // 邮箱格式验证（选填）
+                    if (this.formData.email && this.formData.email.trim()) {
+                        const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (!emailReg.test(this.formData.email)) {
+                            alert('请输入正确的邮箱格式');
+                            return;
+                        }
                     }
-                    if (!this.formData.email.trim()) {
-                        alert('请输入邮箱');
-                        return;
-                    }
-                    // 邮箱格式验证
-                    const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                    if (!emailReg.test(this.formData.email)) {
-                        alert('请输入正确的邮箱格式');
-                        return;
-                    }
-                    
-                    // 保存数据
-                    this.originalData = JSON.parse(JSON.stringify(this.formData));
-                    alert('个人资料保存成功！');
+
+                    http.put('/api/user/profile', {
+                        realName: this.formData.name,
+                        email: this.formData.email,
+                        gender: this.formData.gender === 'female' ? 2 : 1,
+                        birthday: this.formData.birthday || null
+                    }).then((user) => {
+                        // 同步本地登录态展示
+                        Auth.updateUser(user);
+                        this.originalData = JSON.parse(JSON.stringify(this.formData));
+                        alert('个人资料保存成功！');
+                    }).catch((err) => {
+                        alert(err.message || '保存失败，请稍后重试');
+                    });
                 },
                 resetForm() {
                     if (JSON.stringify(this.formData) !== JSON.stringify(this.originalData)) {
@@ -415,18 +421,22 @@
                     }
                 },
                 loadUserInfo() {
-                    // 模拟加载用户信息
-                    this.formData = {
-                        name: '张三',
-                        gender: 'male',
-                        birthday: '1990-05-15',
-                        email: 'zhangsan@example.com',
-                        phone: '135****5678'
-                    };
-                    this.originalData = JSON.parse(JSON.stringify(this.formData));
+                    http.get('/api/user/profile').then((user) => {
+                        this.formData = {
+                            name: user.realName || user.username || '',
+                            gender: user.gender === 2 ? 'female' : 'male',
+                            birthday: user.birthday || '',
+                            email: user.email || '',
+                            phone: user.phone || ''
+                        };
+                        this.originalData = JSON.parse(JSON.stringify(this.formData));
+                    }).catch((err) => {
+                        alert(err.message || '加载个人资料失败');
+                    });
                 }
             },
             mounted() {
+                if (!Auth.requireLogin()) return;
                 this.loadUserInfo();
             }
         });

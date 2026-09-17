@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <title>关注的医院 - 健康之路在线医疗</title>
     <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <script src="js/auth-interceptor.js"></script>
     <link rel="stylesheet" href="css/common.css">
     <style>
         * {
@@ -382,67 +384,35 @@
                 },
                 unfollowHospital(id) {
                     if (confirm('确定取消关注该医院吗？')) {
-                        this.hospitals = this.hospitals.filter(h => h.id !== id);
-                        if (this.currentPage > this.totalPages && this.currentPage > 1) {
-                            this.currentPage--;
-                        }
-                        alert('取消关注成功');
+                        http.del('/api/follows', { followType: 1, followId: id }).then(() => {
+                            this.hospitals = this.hospitals.filter(h => h.id !== id);
+                            if (this.currentPage > this.totalPages && this.currentPage > 1) {
+                                this.currentPage--;
+                            }
+                            alert('取消关注成功');
+                        }).catch((err) => {
+                            alert(err.message || '操作失败');
+                        });
                     }
                 },
                 loadHospitals() {
-                    this.hospitals = [
-                        { 
-                            id: 1, 
-                            name: '北京协和医院', 
-                            level: '三级甲等', 
-                            address: '北京市东城区帅府园1号',
-                            phone: '010-69156114',
-                            image: 'img/hospital_100001977.jpg'
-                        },
-                        { 
-                            id: 2, 
-                            name: '上海瑞金医院', 
-                            level: '三级甲等', 
-                            address: '上海市黄浦区瑞金二路197号',
-                            phone: '021-64370045',
-                            image: 'img/hospital_14616536073112.jpg'
-                        },
-                        { 
-                            id: 3, 
-                            name: '广州中山医院', 
-                            level: '三级甲等', 
-                            address: '广州市天河区天河路600号',
-                            phone: '020-89896989',
-                            image: 'img/hospital_16043929044175.jpg'
-                        },
-                        { 
-                            id: 4, 
-                            name: '杭州浙一医院', 
-                            level: '三级甲等', 
-                            address: '杭州市上城区庆春路79号',
-                            phone: '0571-87236114',
-                            image: 'img/hospital_16195932543164.png'
-                        },
-                        { 
-                            id: 5, 
-                            name: '南京鼓楼医院', 
-                            level: '三级甲等', 
-                            address: '南京市鼓楼区中山路321号',
-                            phone: '025-83106666',
-                            image: 'img/hospital_100001977.jpg'
-                        },
-                        { 
-                            id: 6, 
-                            name: '武汉同济医院', 
-                            level: '三级甲等', 
-                            address: '武汉市硚口区解放大道1095号',
-                            phone: '027-83662688',
-                            image: 'img/hospital_14616536073112.jpg'
-                        }
-                    ];
+                    http.get('/api/follows', { followType: 1, pageNum: 1, pageSize: 100 }).then((page) => {
+                        const list = (page && page.list) || [];
+                        this.hospitals = list.map((f) => ({
+                            id: f.followId,
+                            name: f.targetName,
+                            level: f.targetIntro,
+                            address: '',
+                            phone: '',
+                            image: f.targetImage
+                        }));
+                    }).catch((err) => {
+                        alert(err.message || '加载失败');
+                    });
                 }
             },
             mounted() {
+                if (!Auth.requireLogin()) return;
                 this.loadHospitals();
             }
         });

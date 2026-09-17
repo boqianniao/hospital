@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <title>我的评价 - 健康之路在线医疗</title>
     <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <script src="js/auth-interceptor.js"></script>
     <link rel="stylesheet" href="css/common.css">
     <style>
         * {
@@ -479,83 +481,27 @@
                     this.reviewCurrentPage = 1;
                 },
                 loadReviews() {
-                    this.reviews = [
-                        { 
-                            id: 1,
-                            type: '挂号评价',
-                            doctorName: '王建国', 
-                            doctorTitle: '主任医师', 
-                            department: '消化内科',
-                            hospitalName: '广州中山医院',
-                            doctorAvatar: 'img/doctor-male-doc.jpg',
-                            reviewTime: '2024-03-15 14:30',
-                            content: '医生非常专业，耐心解答了我的问题，给出了详细的治疗方案，非常满意！',
-                            rating: 5
-                        },
-                        { 
-                            id: 2,
-                            type: '电话咨询评价',
-                            doctorName: '陈美玲', 
-                            doctorTitle: '主治医师', 
-                            department: '肾内科',
-                            hospitalName: '杭州浙一医院',
-                            doctorAvatar: 'img/doctor-female-doc.jpg',
-                            reviewTime: '2024-03-12 10:20',
-                            content: '医生很细心，电话咨询讲解很清楚，建议也很实用，感谢！',
-                            rating: 5
-                        },
-                        { 
-                            id: 3,
-                            type: '挂号评价',
-                            doctorName: '刘芳华', 
-                            doctorTitle: '副主任医师', 
-                            department: '血液科',
-                            hospitalName: '上海瑞金医院',
-                            doctorAvatar: 'img/doctor-female-doc.jpg',
-                            reviewTime: '2024-03-08 16:45',
-                            content: '医生态度很好，就诊过程顺利，满意！',
-                            rating: 4
-                        },
-                        { 
-                            id: 4,
-                            type: '挂号评价',
-                            doctorName: '张明远', 
-                            doctorTitle: '主任医师', 
-                            department: '心内科',
-                            hospitalName: '北京协和医院',
-                            doctorAvatar: 'img/doctor-male-doc.jpg',
-                            reviewTime: '2024-03-05 09:15',
-                            content: '经验丰富，诊断准确，治疗效果很好。',
-                            rating: 5
-                        },
-                        { 
-                            id: 5,
-                            type: '电话咨询评价',
-                            doctorName: '李秀华', 
-                            doctorTitle: '副主任医师', 
-                            department: '呼吸内科',
-                            hospitalName: '上海瑞金医院',
-                            doctorAvatar: 'img/doctor-female-doc.jpg',
-                            reviewTime: '2024-03-01 11:30',
-                            content: '电话咨询很方便，医生回答问题很及时，专业度高。',
-                            rating: 5
-                        },
-                        { 
-                            id: 6,
-                            type: '挂号评价',
-                            doctorName: '张伟民', 
-                            doctorTitle: '主任医师', 
-                            department: '内分泌科',
-                            hospitalName: '北京协和医院',
-                            doctorAvatar: 'img/doctor-male-doc.jpg',
-                            reviewTime: '2024-02-28 15:00',
-                            content: '医生很有耐心，详细询问病情，给出了很好的建议。',
-                            rating: 5
-                        }
-                    ];
+                    http.get('/api/reviews/mine', { pageNum: 1, pageSize: 100 }).then((page) => {
+                        const list = (page && page.list) || [];
+                        this.reviews = list.map((r) => ({
+                            id: r.id,
+                            type: r.orderType === 1 ? '挂号评价' : '咨询评价',
+                            doctorName: r.doctorName,
+                            doctorTitle: '',
+                            department: '',
+                            hospitalName: '',
+                            doctorAvatar: '',
+                            reviewTime: r.createTime,
+                            content: r.content,
+                            rating: r.rating
+                        }));
+                    }).catch((err) => {
+                        alert(err.message || '加载失败');
+                    });
                 }
             },
             mounted() {
+                if (!Auth.requireLogin()) return;
                 this.loadReviews();
             }
         });

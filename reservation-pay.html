@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <title>预约支付 - 健康之路在线医疗</title>
     <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <script src="js/auth-interceptor.js"></script>
     <link rel="stylesheet" href="css/common.css">
     <style>
         * {
@@ -415,6 +417,8 @@
             data: {
                 loading: true,
                 payButtonDisabled: false,  // 支付按钮是否禁用
+                appointmentId: '',
+                businessType: 1, // 1=挂号
                 orderNo: '',
                 doctorName: '',
                 doctorTitle: '',
@@ -438,41 +442,78 @@
                     return amount;
                 },
                 loadPayInfo() {
-                    this.orderNo = this.getUrlParam('orderNo') || 'ORD202606270001';
-                    this.doctorName = '张明远';
-                    this.doctorTitle = '主任医师';
-                    this.doctorDepartment = '心内科';
-                    this.scheduleDate = '2026-06-28';
-                    this.timeSlot = '上午 09:00-12:00';
-                    this.patientName = '李小明';
-                    this.patientPhone = '138****5678';
-                    this.amount = 50.00;
-                    this.loading = false;
+                    this.appointmentId = this.getUrlParam('id');
+                    this.orderNo = this.getUrlParam('orderNo') || '';
+                    if (!this.appointmentId) {
+                        alert('缺少订单信息');
+                        return;
+                    }
+                    http.get('/api/appointments/' + this.appointmentId).then((a) => {
+                        this.orderNo = a.orderNo;
+                        this.doctorName = a.doctorName;
+                        this.scheduleDate = a.appointmentDate;
+                        this.timeSlot = a.appointmentTime;
+                        this.patientName = a.patientName;
+                        this.patientPhone = a.patientPhone;
+                        this.amount = Number(a.amount);
+                        this.loading = false;
+                        // 医生职称/科室 AppointmentVO 未返回，补充查询医生详情
+                        if (a.doctorId) {
+                            http.get('/api/doctors/' + a.doctorId).then((d) => {
+                                this.doctorTitle = d.title;
+                                this.doctorDepartment = d.departmentName;
+                            }).catch(() => {});
+                        }
+                    }).catch((err) => {
+                        alert(err.message || '加载订单失败');
+                    });
                 },
                 submitPay() {
                     if (this.payButtonDisabled) {
                         return;
                     }
-                    
                     this.payButtonDisabled = true;
-                    
-                    const params = new URLSearchParams({
+                    const payMethod = this.payMethod === 'alipay' ? 1 : 2;
+                    const methodLabel = this.payMethod === 'alipay' ? '支付宝' : '微信支付';
+                    http.post('/api/pay/create', {
                         orderNo: this.orderNo,
-                        doctorName: this.doctorName,
-                        doctorTitle: this.doctorTitle,
-                        doctorDepartment: this.doctorDepartment,
-                        scheduleDate: this.scheduleDate,
-                        timeSlot: this.timeSlot,
-                        patientName: this.patientName,
-                        patientPhone: this.patientPhone,
-                        amount: this.amount,
-                        payMethod: this.payMethod === 'alipay' ? '支付宝' : '微信支付'
+                        businessType: this.businessType,
+                        payMethod: payMethod
+                    }).then((vo) => {
+                        if (vo.mock === true) {
+                            // 模拟支付：直接回调 mock 成功地址
+                            return http.post(vo.mockNotifyUrl).then(() => {
+                                this.goSuccess(methodLabel);
+                            });
+                        }
+                        if (vo.payForm) {
+                            // 真实支付宝：写入表单并自动提交跳转
+                            const box = document.createElement('div');
+                            box.style.display = 'none';
+                            box.innerHTML = vo.payForm;
+                            document.body.appendChild(box);
+                            const form = box.querySelector('form');
+                            if (form) {
+                                form.submit();
+                            } else {
+                                document.write(vo.payForm);
+                            }
+                            return;
+                        }
+                        throw new Error('支付发起失败');
+                    }).catch((err) => {
+                        this.payButtonDisabled = false;
+                        alert(err.message || '支付失败');
                     });
-                    
-                    window.location.href = 'reservation-success.html?' + params.toString();
+                },
+                goSuccess(methodLabel) {
+                    window.location.href = 'reservation-success.html?id=' + this.appointmentId +
+                        '&orderNo=' + encodeURIComponent(this.orderNo) +
+                        '&payMethod=' + encodeURIComponent(methodLabel);
                 }
             },
             mounted() {
+                if (!Auth.requireLogin()) return;
                 this.loadPayInfo();
             }
         });

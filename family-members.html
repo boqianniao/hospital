@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <title>就诊成员 - 健康之路在线医疗</title>
     <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <script src="js/auth-interceptor.js"></script>
     <link rel="stylesheet" href="css/common.css">
     <style>
         * {
@@ -624,46 +626,49 @@
                         return;
                     }
 
+                    const payload = {
+                        name: this.formData.name,
+                        gender: this.formData.gender === 'female' ? 2 : 1,
+                        birthday: this.formData.birthday || null,
+                        relation: this.formData.relation,
+                        phone: this.formData.phone,
+                        idCard: this.formData.idCard
+                    };
+
                     if (this.isEdit) {
-                        // 编辑成员
-                        const index = this.members.findIndex(m => m.id === this.editingId);
-                        if (index !== -1) {
-                            this.members[index] = {
-                                ...this.members[index],
-                                ...this.formData
-                            };
-                        }
-                        alert('修改成功');
+                        http.put('/api/family-members/' + this.editingId, payload).then(() => {
+                            alert('修改成功');
+                            this.closeModal();
+                            this.loadMembers();
+                        }).catch((err) => {
+                            alert(err.message || '操作失败');
+                        });
                     } else {
-                        // 添加成员
-                        const newMember = {
-                            id: Date.now(),
-                            ...this.formData,
-                            isDefault: this.members.length === 0
-                        };
-                        this.members.push(newMember);
-                        alert('添加成功');
+                        http.post('/api/family-members', payload).then(() => {
+                            alert('添加成功');
+                            this.closeModal();
+                            this.loadMembers();
+                        }).catch((err) => {
+                            alert(err.message || '操作失败');
+                        });
                     }
-                    this.closeModal();
                 },
                 setDefault(id) {
-                    this.members.forEach(m => {
-                        m.isDefault = m.id === id;
+                    http.put('/api/family-members/' + id + '/default').then(() => {
+                        alert('已设置为默认就诊成员');
+                        this.loadMembers();
+                    }).catch((err) => {
+                        alert(err.message || '操作失败');
                     });
-                    alert('已设置为默认就诊成员');
                 },
                 deleteMember(id) {
                     if (confirm('确定要删除该就诊成员吗？')) {
-                        const member = this.members.find(m => m.id === id);
-                        if (member && member.isDefault && this.members.length > 1) {
-                            // 如果删除的是默认成员，将第一个非默认成员设为默认
-                            const firstNonDefault = this.members.find(m => m.id !== id);
-                            if (firstNonDefault) {
-                                firstNonDefault.isDefault = true;
-                            }
-                        }
-                        this.members = this.members.filter(m => m.id !== id);
-                        alert('删除成功');
+                        http.del('/api/family-members/' + id).then(() => {
+                            alert('删除成功');
+                            this.loadMembers();
+                        }).catch((err) => {
+                            alert(err.message || '操作失败');
+                        });
                     }
                 },
                 // 身份证号脱敏
@@ -677,42 +682,24 @@
                     return phone.substring(0, 3) + '****' + phone.substring(7);
                 },
                 loadMembers() {
-                    // 模拟加载就诊成员数据
-                    this.members = [
-                        { 
-                            id: 1, 
-                            name: '张三', 
-                            gender: 'male', 
-                            birthday: '1990-05-15', 
-                            relation: '本人', 
-                            idCard: '110101199005151234',
-                            phone: '13812345678',
-                            isDefault: true
-                        },
-                        { 
-                            id: 2, 
-                            name: '李四', 
-                            gender: 'female', 
-                            birthday: '1992-08-20', 
-                            relation: '配偶', 
-                            idCard: '310101199208205678',
-                            phone: '13987654321',
-                            isDefault: false
-                        },
-                        { 
-                            id: 3, 
-                            name: '张小明', 
-                            gender: 'male', 
-                            birthday: '2015-12-10', 
-                            relation: '子女', 
-                            idCard: '110101201512109012',
-                            phone: '13611112222',
-                            isDefault: false
-                        }
-                    ];
+                    http.get('/api/family-members').then((list) => {
+                        this.members = (list || []).map((m) => ({
+                            id: m.id,
+                            name: m.name,
+                            gender: m.gender === 2 ? 'female' : 'male',
+                            birthday: m.birthday || '',
+                            relation: m.relation,
+                            idCard: m.idCard,
+                            phone: m.phone,
+                            isDefault: m.isDefault
+                        }));
+                    }).catch((err) => {
+                        alert(err.message || '加载失败');
+                    });
                 }
             },
             mounted() {
+                if (!Auth.requireLogin()) return;
                 this.loadMembers();
             }
         });

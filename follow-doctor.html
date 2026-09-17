@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <title>关注的医生 - 健康之路在线医疗</title>
     <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <script src="js/auth-interceptor.js"></script>
     <link rel="stylesheet" href="css/common.css">
     <style>
         * {
@@ -381,79 +383,35 @@
                 },
                 unfollowDoctor(id) {
                     if (confirm('确定取消关注该医生吗？')) {
-                        this.doctors = this.doctors.filter(d => d.id !== id);
-                        if (this.currentPage > this.totalPages && this.currentPage > 1) {
-                            this.currentPage--;
-                        }
-                        alert('取消关注成功');
+                        http.del('/api/follows', { followType: 2, followId: id }).then(() => {
+                            this.doctors = this.doctors.filter(d => d.id !== id);
+                            if (this.currentPage > this.totalPages && this.currentPage > 1) {
+                                this.currentPage--;
+                            }
+                            alert('取消关注成功');
+                        }).catch((err) => {
+                            alert(err.message || '操作失败');
+                        });
                     }
                 },
                 loadDoctors() {
-                    this.doctors = [
-                        { 
-                            id: 1, 
-                            name: '张明远', 
-                            title: '主任医师', 
-                            department: '心内科',
-                            hospital: '北京协和医院',
-                            consultCount: 5680,
-                            rating: 4.9,
-                            avatar: 'img/doctor-male-doc.jpg'
-                        },
-                        { 
-                            id: 2, 
-                            name: '李秀华', 
-                            title: '副主任医师', 
-                            department: '呼吸内科',
-                            hospital: '上海瑞金医院',
-                            consultCount: 4250,
-                            rating: 4.8,
-                            avatar: 'img/doctor-female-doc.jpg'
-                        },
-                        { 
-                            id: 3, 
-                            name: '王建国', 
-                            title: '主任医师', 
-                            department: '消化内科',
-                            hospital: '广州中山医院',
-                            consultCount: 3890,
-                            rating: 4.9,
-                            avatar: 'img/doctor-male-doc.jpg'
-                        },
-                        { 
-                            id: 4, 
-                            name: '陈美玲', 
-                            title: '主治医师', 
-                            department: '肾内科',
-                            hospital: '杭州浙一医院',
-                            consultCount: 2150,
-                            rating: 4.7,
-                            avatar: 'img/doctor-female-doc.jpg'
-                        },
-                        { 
-                            id: 5, 
-                            name: '张伟民', 
-                            title: '主任医师', 
-                            department: '内分泌科',
-                            hospital: '北京协和医院',
-                            consultCount: 6200,
-                            rating: 4.9,
-                            avatar: 'img/doctor-male-doc.jpg'
-                        },
-                        { 
-                            id: 6, 
-                            name: '刘芳华', 
-                            title: '副主任医师', 
-                            department: '血液科',
-                            hospital: '上海瑞金医院',
-                            consultCount: 3400,
-                            rating: 4.8,
-                            avatar: 'img/doctor-female-doc.jpg'
-                        }
-                    ];
+                    http.get('/api/follows', { followType: 2, pageNum: 1, pageSize: 100 }).then((page) => {
+                        const list = (page && page.list) || [];
+                        this.doctors = list.map((f) => ({
+                            id: f.followId,
+                            name: f.targetName,
+                            title: f.targetIntro,
+                            department: '',
+                            hospital: '',
+                            avatar: f.targetImage
+                        }));
+                    }).catch((err) => {
+                        alert(err.message || '加载失败');
+                    });
                 }
             },
             mounted() {
+                if (!Auth.requireLogin()) return;
                 this.loadDoctors();
             }
         });

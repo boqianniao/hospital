@@ -5,6 +5,7 @@
     <title>预约成功 - 健康之路在线医疗</title>
     <script src="js/vue.js"></script>
     <script src="js/axios-0.18.0.js"></script>
+    <script src="js/auth-interceptor.js"></script>
     <link rel="stylesheet" href="css/common.css">
     <style>
         * {
@@ -400,14 +401,14 @@
                 doctorName: '',
                 doctorTitle: '',
                 doctorDepartment: '',
-                doctorHospital: '北京协和医院',
+                doctorHospital: '',
                 scheduleDate: '',
                 timeSlot: '',
                 patientName: '',
                 patientPhone: '',
-                patientIdCard: '310101********1234',
+                patientIdCard: '',
                 amount: 0,
-                payMethod: ''
+                payMethod: '支付宝'
             },
             methods: {
                 // 获取URL参数
@@ -417,16 +418,29 @@
                 },
                 // 加载数据
                 loadData() {
+                    const id = this.getUrlParam('id');
                     this.orderNo = this.getUrlParam('orderNo');
-                    this.doctorName = this.getUrlParam('doctorName');
-                    this.doctorTitle = this.getUrlParam('doctorTitle');
-                    this.doctorDepartment = this.getUrlParam('doctorDepartment');
-                    this.scheduleDate = this.getUrlParam('scheduleDate');
-                    this.timeSlot = this.getUrlParam('timeSlot');
-                    this.patientName = this.getUrlParam('patientName');
-                    this.patientPhone = this.getUrlParam('patientPhone');
-                    this.amount = parseFloat(this.getUrlParam('amount')) || 0;
-                    this.payMethod = this.getUrlParam('payMethod');
+                    this.payMethod = this.getUrlParam('payMethod') || '支付宝';
+                    if (!id) return;
+                    http.get('/api/appointments/' + id).then((a) => {
+                        this.orderNo = a.orderNo;
+                        this.doctorName = a.doctorName;
+                        this.doctorHospital = a.hospitalName;
+                        this.scheduleDate = a.appointmentDate;
+                        this.timeSlot = a.appointmentTime;
+                        this.patientName = a.patientName;
+                        this.patientPhone = a.patientPhone;
+                        this.patientIdCard = a.patientIdCard;
+                        this.amount = Number(a.amount);
+                        if (a.doctorId) {
+                            http.get('/api/doctors/' + a.doctorId).then((d) => {
+                                this.doctorTitle = d.title;
+                                this.doctorDepartment = d.departmentName;
+                            }).catch(() => {});
+                        }
+                    }).catch((err) => {
+                        alert(err.message || '加载订单失败');
+                    });
                 },
                 // 格式化金额
                 formatAmount(amount) {
@@ -445,6 +459,7 @@
                 }
             },
             mounted() {
+                if (!Auth.requireLogin()) return;
                 this.loadData();
             }
         });

@@ -5,6 +5,7 @@
     <title>在线预约挂号 - 健康之路在线医疗</title>
     <script src="js/vue.js"></script>
     <script src="js/axios-0.18.0.js"></script>
+    <script src="js/auth-interceptor.js"></script>
     <link rel="stylesheet" href="css/common.css">
     <style>
         * {
@@ -703,39 +704,22 @@
         new Vue({
             el: '#app',
             data: {
-                // 医生信息
-                doctor: {
-                    id: 1,
-                    name: '张明远',
-                    department: '心内科',
-                    hospital: '北京协和医院',
-                    avatar: 'img/doctor-male-doc.jpg',
-                    title: '主任医师',
-                    tags: ['冠心病', '高血压', '心律失常', '心肌病']
-                },
+                // 医生信息（后端加载）
+                doctor: null,
+                doctorId: '',
                 // 预约日期
                 selectedDate: '',
                 minDate: '',
-                // 时间段
-                timeSlots: [
-                    { time: '08:00-09:00', available: true },
-                    { time: '09:00-10:00', available: true },
-                    { time: '10:00-11:00', available: false },
-                    { time: '14:00-15:00', available: true },
-                    { time: '15:00-16:00', available: true },
-                    { time: '16:00-17:00', available: true }
-                ],
+                // 时间段（后端号源）
+                timeSlots: [],
                 selectedTime: '',
-                // 就诊人
-                patients: [
-                    { id: 1, name: '张三', idCard: '1101011990****1234', phone: '138****1234' },
-                    { id: 2, name: '李四', idCard: '1101021985****5678', phone: '139****5678' },
-                    { id: 3, name: '王五', idCard: '1101031995****9012', phone: '137****9012' },
-                    { id: 4, name: '赵六', idCard: '1101041988****3456', phone: '136****3456' }
-                ],
+                selectedScheduleId: null,
+                // 就诊人（后端就诊成员）
+                patients: [],
                 selectedPatientId: null,
                 showAllPatients: false,
                 showAddModal: false,
+                submitting: false,
                 newPatient: {
                     name: '',
                     idCard: '',
@@ -744,7 +728,7 @@
             },
             computed: {
                 canSubmit() {
-                    return this.selectedDate && this.selectedTime && this.selectedPatientId;
+                    return !!(this.selectedScheduleId && this.selectedPatientId) && !this.submitting;
                 }
             },
             methods: {
@@ -760,18 +744,55 @@
                     const mm = String(today.getMonth() + 1).padStart(2, '0');
                     const dd = String(today.getDate()).padStart(2, '0');
                     this.minDate = `${yyyy}-${mm}-${dd}`;
-                    
-                    // 从URL获取日期参数
-                    const dateParam = this.getUrlParam('date');
-                    if (dateParam) {
-                        this.selectedDate = dateParam;
-                    }
-                    
-                    // 从URL获取医生参数
-                    const doctorId = this.getUrlParam('doctorId');
-                    if (doctorId) {
-                        // 可根据医生ID加载对应医生信息
-                    }
+                },
+                // 加载医生信息
+                loadDoctor() {
+                    return http.get('/api/doctors/' + this.doctorId).then((d) => {
+                        this.doctor = {
+                            id: d.id,
+                            name: d.name,
+                            title: d.title,
+                            department: d.departmentName,
+                            hospital: d.hospitalName,
+                            avatar: d.avatar,
+                            tags: d.expertise ? d.expertise.split(/[,，、;\s]+/).filter(Boolean) : []
+                        };
+                    });
+                },
+                // 加载号源
+                loadSchedules() {
+                    return http.get('/api/doctors/' + this.doctorId + '/schedules').then((list) => {
+                        list = list || [];
+                        const urlDate = this.getUrlParam('date');
+                        let picked = urlDate ? list.filter(s => s.scheduleDate === urlDate) : [];
+                        if (!picked.length && list.length) {
+                            const firstDate = list[0].scheduleDate;
+                            picked = list.filter(s => s.scheduleDate === firstDate);
+                            this.selectedDate = firstDate;
+                        } else if (picked.length) {
+                            this.selectedDate = urlDate;
+                        }
+                        this.timeSlots = picked.map(s => ({
+                            time: s.timeSlot,
+                            available: s.remainCount > 0 && s.status !== 0,
+                            id: s.id,
+                            scheduleDate: s.scheduleDate
+                        }));
+                    });
+                },
+                // 加载就诊人
+                loadPatients() {
+                    return http.get('/api/family-members').then((list) => {
+                        this.patients = (list || []).map(m => ({
+                            id: m.id,
+                            familyMemberId: m.id,
+                            name: m.name,
+                            idCard: m.idCard,
+                            phone: m.phone
+                        }));
+                        const def = (list || []).find(m => m.isDefault === 1);
+                        if (def) this.selectedPatientId = def.id;
+                    });
                 },
                 // 格式化日期
                 formatDate(dateStr) {
@@ -785,6 +806,9 @@
                 // 选择时间段
                 selectTime(time) {
                     this.selectedTime = time;
+                    const slot = this.timeSlots.find(s => s.time === time);
+                    this.selectedScheduleId = slot ? slot.id : null;
+                    if (slot && slot.scheduleDate) this.selectedDate = slot.scheduleDate;
                 },
                 // 选择就诊人
                 selectPatient(id) {
@@ -799,13 +823,14 @@
                 closeAddPatient() {
                     this.showAddModal = false;
                 },
-                // 添加就诊人
+                // 添加就诊人（本地填写，下单时直接提交姓名/电话/证件）
                 addPatient() {
                     if (!this.newPatient.name || !this.newPatient.idCard || !this.newPatient.phone) {
                         alert('请填写完整的就诊人信息');
                         return;
                     }
-                    const newId = Math.max(...this.patients.map(p => p.id)) + 1;
+                    const ids = this.patients.map(p => p.id);
+                    const newId = (ids.length ? Math.max.apply(null, ids) : 0) + 1;
                     this.patients.push({
                         id: newId,
                         name: this.newPatient.name,
@@ -815,35 +840,39 @@
                     this.selectedPatientId = newId;
                     this.closeAddPatient();
                 },
-                // 生成订单号
-                generateOrderNo() {
-                    const timestamp = Date.now();
-                    const random = Math.random().toString(36).substring(2, 10).toUpperCase();
-                    return 'APPOINTMENT' + timestamp + random;
-                },
                 // 提交预约
                 submitForm() {
                     if (!this.canSubmit) return;
-                    
-                    const orderNo = this.generateOrderNo();
-                    const params = new URLSearchParams({
-                        orderNo: orderNo,
-                        doctorName: this.doctor.name,
-                        doctorTitle: this.doctor.title,
-                        doctorDepartment: this.doctor.department,
-                        doctorHospital: this.doctor.hospital,
-                        date: this.selectedDate,
-                        time: this.selectedTime,
-                        patientName: this.patients.find(p => p.id === this.selectedPatientId).name,
-                        patientIdCard: this.patients.find(p => p.id === this.selectedPatientId).idCard,
-                        patientPhone: this.patients.find(p => p.id === this.selectedPatientId).phone
+                    const p = this.patients.find(x => x.id === this.selectedPatientId);
+                    const body = { scheduleId: this.selectedScheduleId };
+                    if (p && p.familyMemberId) {
+                        body.familyMemberId = p.familyMemberId;
+                    } else if (p) {
+                        body.patientName = p.name;
+                        body.patientPhone = p.phone;
+                        body.patientIdCard = p.idCard;
+                    }
+                    this.submitting = true;
+                    http.post('/api/appointments', body).then((vo) => {
+                        window.location.href = 'reservation-pay.html?orderNo=' +
+                            encodeURIComponent(vo.orderNo) + '&id=' + vo.id;
+                    }).catch((err) => {
+                        this.submitting = false;
+                        alert(err.message || '下单失败');
                     });
-                    
-                    window.location.href = 'reservation-pay.html?' + params.toString();
                 }
             },
             mounted() {
+                if (!Auth.requireLogin()) return;
                 this.initDate();
+                this.doctorId = this.getUrlParam('doctorId') || this.getUrlParam('id');
+                if (!this.doctorId) {
+                    alert('缺少医生信息');
+                    return;
+                }
+                this.loadDoctor().catch(err => alert(err.message || '加载医生信息失败'));
+                this.loadSchedules().catch(err => alert(err.message || '加载号源失败'));
+                this.loadPatients().catch(err => alert(err.message || '加载就诊人失败'));
             }
         });
     </script>

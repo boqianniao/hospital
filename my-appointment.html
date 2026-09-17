@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <title>我的挂号 - 健康之路在线医疗</title>
     <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <script src="js/auth-interceptor.js"></script>
     <link rel="stylesheet" href="css/common.css">
     <style>
         * {
@@ -499,7 +501,7 @@
                             </div>
                         </div>
                         <div class="order-footer">
-                            <button v-if="order.status === 'pending'">取消预约</button>
+                            <button v-if="order.canCancel" @click="cancelOrder(order)">取消预约</button>
                             <button v-if="order.status === 'completed'">再次预约</button>
                             <button 
                                 v-if="order.status === 'completed' && !order.hasReviewed" 
@@ -614,11 +616,11 @@
                         });
                     }
                     
-                    // 订单状态筛选
+                    // 订单状态筛选（按后端数字状态码）
                     if (this.orderStatus) {
-                        result = result.filter(order => order.status === this.orderStatus);
+                        result = result.filter(order => String(order.statusCode) === String(this.orderStatus));
                     }
-                    
+
                     return result;
                 },
                 totalPages() {
@@ -675,11 +677,26 @@
                 },
                 getStatusText(status) {
                     const statusMap = {
-                        pending: '待就诊',
+                        pending: '待支付',
+                        paid: '已支付',
                         completed: '已完成',
                         cancelled: '已取消'
                     };
                     return statusMap[status] || status;
+                },
+                // 数字状态 -> 前端样式/文案键
+                statusClass(code) {
+                    return { 1: 'pending', 2: 'paid', 3: 'completed', 4: 'cancelled' }[code] || 'pending';
+                },
+                // 取消挂号
+                cancelOrder(order) {
+                    if (!confirm('确定要取消该挂号吗？')) return;
+                    http.put('/api/appointments/' + order.id + '/cancel').then(() => {
+                        alert('已取消');
+                        this.loadOrders();
+                    }).catch((err) => {
+                        alert(err.message || '取消失败');
+                    });
                 },
                 // 评价相关方法
                 openReviewModal(order) {
@@ -711,89 +728,34 @@
                     this.currentPage = 1;
                 },
                 loadOrders() {
-                    this.orders = [
-                        { 
-                            id: 1, 
-                            orderNo: 'DD20240315001', 
-                            hospitalName: '北京协和医院', 
-                            hospitalImage: 'img/hospital_100001977.jpg',
-                            doctorName: '张明远', 
-                            doctorTitle: '主任医师', 
-                            department: '心内科',
-                            appointmentTime: '2024-03-20 09:00',
-                            patientName: '张三',
-                            status: 'pending',
+                    http.get('/api/appointments', { pageNum: 1, pageSize: 100 }).then((page) => {
+                        const list = (page && page.list) || [];
+                        this.orders = list.map(a => ({
+                            id: a.id,
+                            orderNo: a.orderNo,
+                            hospitalName: a.hospitalName,
+                            hospitalImage: 'img/hospital_100001977.jpg', // 挂号VO无医院图片，用占位图
+                            doctorName: a.doctorName,
+                            doctorTitle: '', // AppointmentVO 未返回职称
+                            department: '',  // AppointmentVO 未返回科室
+                            appointmentTime: ((a.appointmentDate || '') + ' ' + (a.appointmentTime || '')).trim(),
+                            patientName: a.patientName,
+                            status: this.statusClass(a.status),
+                            statusCode: a.status,
+                            statusText: a.statusText,
+                            canCancel: a.status === 1 || a.status === 2, // 待支付/已支付可取消
                             hasReviewed: false
-                        },
-                        { 
-                            id: 2, 
-                            orderNo: 'DD20240314002', 
-                            hospitalName: '上海瑞金医院', 
-                            hospitalImage: 'img/hospital_14616536073112.jpg',
-                            doctorName: '李秀华', 
-                            doctorTitle: '副主任医师', 
-                            department: '呼吸内科',
-                            appointmentTime: '2024-03-19 14:30',
-                            patientName: '李四',
-                            status: 'pending',
-                            hasReviewed: false
-                        },
-                        { 
-                            id: 3, 
-                            orderNo: 'DD20240313003', 
-                            hospitalName: '广州中山医院', 
-                            hospitalImage: 'img/hospital_16043929044175.jpg',
-                            doctorName: '王建国', 
-                            doctorTitle: '主任医师', 
-                            department: '消化内科',
-                            appointmentTime: '2024-03-15 10:00',
-                            patientName: '王五',
-                            status: 'completed',
-                            hasReviewed: false
-                        },
-                        { 
-                            id: 4, 
-                            orderNo: 'DD20240312004', 
-                            hospitalName: '杭州浙一医院', 
-                            hospitalImage: 'img/hospital_16195932543164.jpg',
-                            doctorName: '陈美玲', 
-                            doctorTitle: '主治医师', 
-                            department: '肾内科',
-                            appointmentTime: '2024-03-12 15:00',
-                            patientName: '赵六',
-                            status: 'completed',
-                            hasReviewed: true
-                        },
-                        { 
-                            id: 5, 
-                            orderNo: 'DD20240311005', 
-                            hospitalName: '北京协和医院', 
-                            hospitalImage: 'img/hospital_100001977.jpg',
-                            doctorName: '张伟民', 
-                            doctorTitle: '主任医师', 
-                            department: '内分泌科',
-                            appointmentTime: '2024-03-10 09:00',
-                            patientName: '孙七',
-                            status: 'cancelled',
-                            hasReviewed: false
-                        },
-                        { 
-                            id: 6, 
-                            orderNo: 'DD20240301006', 
-                            hospitalName: '上海瑞金医院', 
-                            hospitalImage: 'img/hospital_14616536073112.jpg',
-                            doctorName: '刘芳华', 
-                            doctorTitle: '副主任医师', 
-                            department: '血液科',
-                            appointmentTime: '2024-03-05 11:00',
-                            patientName: '孙八',
-                            status: 'completed',
-                            hasReviewed: false
+                        }));
+                        if (this.currentPage > this.totalPages) {
+                            this.currentPage = this.totalPages || 1;
                         }
-                    ];
+                    }).catch((err) => {
+                        alert(err.message || '加载挂号记录失败');
+                    });
                 }
             },
             mounted() {
+                if (!Auth.requireLogin()) return;
                 this.loadOrders();
             }
         });

@@ -5,6 +5,7 @@
     <title>电话咨询 - 健康之路在线医疗</title>
     <script src="js/vue.js"></script>
     <script src="js/axios-0.18.0.js"></script>
+    <script src="js/auth-interceptor.js"></script>
     <style>
         * {
             margin: 0;
@@ -742,30 +743,16 @@
         new Vue({
             el: '#app',
             data: {
-                // 医生信息
-                doctor: {
-                    id: 1,
-                    name: '张明远',
-                    department: '心内科',
-                    hospital: '北京协和医院',
-                    avatar: 'img/doctor-male-doc.jpg',
-                    title: '主任医师',
-                    tags: ['擅长冠心病', '高血压', '心律失常', '心肌病'],
-                    online: true,
-                    introduction: '张明远，主任医师，从事心血管内科临床工作30余年，擅长冠心病、高血压、心律失常、心肌病等心血管疾病的诊断和治疗。'
-                },
-                // 就诊人列表
-                patients: [
-                    { id: 1, name: '张三', idCard: '1101011990****1234', phone: '138****1234' },
-                    { id: 2, name: '李四', idCard: '1101021985****5678', phone: '139****5678' },
-                    { id: 3, name: '王五', idCard: '1101031995****9012', phone: '137****9012' },
-                    { id: 4, name: '赵六', idCard: '1101041988****3456', phone: '136****3456' },
-                    { id: 5, name: '孙七', idCard: '1101051992****7890', phone: '135****7890' }
-                ],
+                // 医生信息（后端加载）
+                doctor: null,
+                doctorId: '',
+                // 就诊人列表（后端就诊成员）
+                patients: [],
                 selectedPatientId: null,
                 showAllPatients: false,
                 showAddModal: false,
                 showSuccess: false,
+                submitting: false,
                 newPatient: {
                     name: '',
                     idCard: '',
@@ -779,12 +766,44 @@
             },
             computed: {
                 canSubmit() {
-                    return this.selectedPatientId && 
-                           this.form.description && 
-                           this.form.agreed;
+                    return !!(this.selectedPatientId &&
+                           this.form.description &&
+                           this.form.agreed) && !this.submitting;
                 }
             },
             methods: {
+                getUrlParam(name) {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    return urlParams.get(name) || '';
+                },
+                loadDoctor() {
+                    return http.get('/api/doctors/' + this.doctorId).then((d) => {
+                        this.doctor = {
+                            id: d.id,
+                            name: d.name,
+                            title: d.title,
+                            department: d.departmentName,
+                            hospital: d.hospitalName,
+                            avatar: d.avatar,
+                            tags: d.expertise ? d.expertise.split(/[,，、;\s]+/).filter(Boolean) : [],
+                            online: d.onlineStatus === 1,
+                            introduction: d.intro
+                        };
+                    });
+                },
+                loadPatients() {
+                    return http.get('/api/family-members').then((list) => {
+                        this.patients = (list || []).map(m => ({
+                            id: m.id,
+                            familyMemberId: m.id,
+                            name: m.name,
+                            idCard: m.idCard,
+                            phone: m.phone
+                        }));
+                        const def = (list || []).find(m => m.isDefault === 1);
+                        if (def) this.selectedPatientId = def.id;
+                    });
+                },
                 selectPatient(id) {
                     this.selectedPatientId = id;
                 },
@@ -800,7 +819,8 @@
                         alert('请填写完整的就诊人信息');
                         return;
                     }
-                    const newId = Math.max(...this.patients.map(p => p.id)) + 1;
+                    const ids = this.patients.map(p => p.id);
+                    const newId = (ids.length ? Math.max.apply(null, ids) : 0) + 1;
                     this.patients.push({
                         id: newId,
                         name: this.newPatient.name,
@@ -811,24 +831,35 @@
                     this.closeAddPatient();
                 },
                 submitForm() {
-                    if (!this.canSubmit) return;
-                    // 生成订单号
-                    const orderNo = 'CONSULT' + Date.now() + 'A26';
-                    // 获取选中的就诊人信息
+                    if (!this.canSubmit || !this.doctor) return;
                     const patient = this.patients.find(p => p.id === this.selectedPatientId);
-                    // 构造跳转URL，传递参数
-                    const params = new URLSearchParams({
-                        orderNo: orderNo,
-                        doctorName: this.doctor.name,
-                        doctorTitle: this.doctor.title,
-                        doctorDepartment: this.doctor.department,
-                        patientName: patient.name,
-                        patientPhone: patient.phone,
-                        amount: 100.00
+                    const body = {
+                        doctorId: this.doctor.id,
+                        diseaseDesc: this.form.description,
+                        duration: 30
+                    };
+                    if (patient && patient.familyMemberId) {
+                        body.familyMemberId = patient.familyMemberId;
+                    } else if (patient) {
+                        body.patientName = patient.name;
+                        body.patientPhone = patient.phone;
+                    }
+                    this.submitting = true;
+                    http.post('/api/consults', body).then((vo) => {
+                        window.location.href = 'consult-pay.html?orderNo=' +
+                            encodeURIComponent(vo.orderNo) + '&id=' + vo.id;
+                    }).catch((err) => {
+                        this.submitting = false;
+                        alert(err.message || '下单失败');
                     });
-                    // 跳转到支付页面
-                    window.location.href = 'consult-pay.html?' + params.toString();
                 }
+            },
+            mounted() {
+                if (!Auth.requireLogin()) return;
+                // 入口未显式携带 doctorId 时默认 1（doctor-detail 咨询按钮当前未传参）
+                this.doctorId = this.getUrlParam('doctorId') || this.getUrlParam('id') || '1';
+                this.loadDoctor().catch(err => alert(err.message || '加载医生信息失败'));
+                this.loadPatients().catch(err => alert(err.message || '加载就诊人失败'));
             }
         });
     </script>
