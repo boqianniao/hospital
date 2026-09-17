@@ -14,8 +14,33 @@ Vue.component('header-component', {
                     <a href="article.html" :class="{active: activeNav === 'article'}">健康科普</a>
                 </div>
                 <div class="search-box">
-                    <input type="text" v-model="searchText" placeholder="搜索医院、医生、疾病..." @keyup.enter="handleSearch">
-                    <button @click="handleSearch">搜索</button>
+                    <input
+                        type="search"
+                        v-model="searchText"
+                        placeholder="搜索医院、医生、疾病、科普"
+                        aria-label="全站搜索"
+                        autocomplete="off"
+                        @input="handleInput"
+                        @focus="handleFocus"
+                        @blur="handleBlur"
+                        @keydown.down.prevent="moveActive(1)"
+                        @keydown.up.prevent="moveActive(-1)"
+                        @keydown.enter.prevent="handleEnter"
+                    >
+                    <button type="button" @click="handleSearch">搜索</button>
+                    <div v-if="panelOpen && panelItems.length" class="search-suggestion-panel" @mousedown.prevent>
+                        <div class="suggestion-title">{{ searchText.trim() ? '搜索联想' : '热门搜索' }}</div>
+                        <button
+                            v-for="(item, index) in panelItems"
+                            :key="item.type + '-' + item.keyword"
+                            type="button"
+                            :class="['suggestion-item', { active: activeSuggestion === index }]"
+                            @click="selectSuggestion(item)"
+                        >
+                            <span>{{ item.keyword }}</span>
+                            <span class="suggestion-type">{{ item.typeName }}</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="auth">
                     <template v-if="isLoggedIn">
@@ -42,12 +67,22 @@ Vue.component('header-component', {
     data() {
         return {
             searchText: '',
+            suggestions: [],
+            hotKeywords: [],
+            panelOpen: false,
+            activeSuggestion: -1,
+            suggestionTimer: null,
+            suggestionRequest: 0,
             isLoggedIn: false,
             userPhone: '',
             userAvatar: 'img/default-avatar.png'
         };
     },
     mounted() {
+        const params = new URLSearchParams(window.location.search);
+        if (/search(?:-[a-z]+)?\.html$/.test(window.location.pathname)) {
+            this.searchText = params.get('keyword') || '';
+        }
         // 检查登录状态（统一走 Auth）
         if (window.Auth && Auth.isLogin()) {
             const user = Auth.user() || {};
@@ -57,14 +92,77 @@ Vue.component('header-component', {
         }
     },
     methods: {
+        handleFocus() {
+            this.panelOpen = true;
+            this.activeSuggestion = -1;
+            if (this.searchText.trim()) {
+                this.fetchSuggestions();
+            } else {
+                this.loadHotKeywords();
+            }
+        },
+        handleBlur() {
+            window.setTimeout(() => { this.panelOpen = false; }, 120);
+        },
+        handleInput() {
+            this.panelOpen = true;
+            this.activeSuggestion = -1;
+            window.clearTimeout(this.suggestionTimer);
+            if (!this.searchText.trim()) {
+                this.suggestions = [];
+                this.loadHotKeywords();
+                return;
+            }
+            this.suggestionTimer = window.setTimeout(this.fetchSuggestions, 220);
+        },
+        fetchSuggestions() {
+            const keyword = this.searchText.trim();
+            if (!keyword || !window.http) return;
+            const requestId = ++this.suggestionRequest;
+            http.get('/api/search/suggestions', { keyword: keyword, limit: 8 }).then((items) => {
+                if (requestId === this.suggestionRequest) {
+                    this.suggestions = items || [];
+                }
+            }).catch(() => {
+                if (requestId === this.suggestionRequest) this.suggestions = [];
+            });
+        },
+        loadHotKeywords() {
+            if (this.hotKeywords.length || !window.http) return;
+            http.get('/api/search/hot', { limit: 8 }).then((items) => {
+                this.hotKeywords = (items || []).map((keyword) => ({ keyword: keyword, type: 'all', typeName: '热门' }));
+            }).catch(() => { this.hotKeywords = []; });
+        },
+        moveActive(step) {
+            if (!this.panelOpen || !this.panelItems.length) return;
+            const size = this.panelItems.length;
+            this.activeSuggestion = (this.activeSuggestion + step + size) % size;
+        },
+        handleEnter() {
+            if (this.activeSuggestion >= 0 && this.panelItems[this.activeSuggestion]) {
+                this.selectSuggestion(this.panelItems[this.activeSuggestion]);
+            } else {
+                this.handleSearch();
+            }
+        },
+        selectSuggestion(item) {
+            this.searchText = item.keyword;
+            this.panelOpen = false;
+            this.goToSearch(item.type === 'all' ? '' : item.type);
+        },
         formatPhone(phone) {
             if (!phone) return '';
             return phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1****$3');
         },
         handleSearch() {
             if (this.searchText.trim()) {
-                window.location.href = 'search-hospital.html?keyword=' + encodeURIComponent(this.searchText);
+                this.goToSearch('');
             }
+        },
+        goToSearch(type) {
+            const query = new URLSearchParams({ keyword: this.searchText.trim() });
+            if (type) query.set('type', type);
+            window.location.href = 'search.html?' + query.toString();
         },
         handleLogout() {
             const done = () => { window.location.href = 'index.html'; };
@@ -73,6 +171,11 @@ Vue.component('header-component', {
             } else {
                 done();
             }
+        }
+    },
+    computed: {
+        panelItems() {
+            return this.searchText.trim() ? this.suggestions : this.hotKeywords;
         }
     }
 });
