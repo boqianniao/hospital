@@ -269,6 +269,17 @@
                 <!-- 个人资料表单 -->
                 <div class="info-form">
                     <div class="form-item">
+                        <label class="form-label">头像</label>
+                        <div class="form-input">
+                            <img :src="formData.avatar || 'img/default-avatar.png'" alt="头像"
+                                 style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px solid #e8eef3;vertical-align:middle;">
+                            <button type="button" @click="triggerAvatar"
+                                    style="margin-left:15px;padding:8px 16px;background:#fff;color:#1e88e5;border:1px solid #1e88e5;border-radius:6px;cursor:pointer;">更换头像</button>
+                            <input type="file" id="avatar-input" style="display:none;" accept="image/*" @change="handleAvatarUpload">
+                        </div>
+                    </div>
+
+                    <div class="form-item">
                         <label class="form-label">
                             <span class="required">*</span>姓名
                         </label>
@@ -344,7 +355,8 @@
                     gender: 'male',
                     birthday: '',
                     email: '',
-                    phone: '135****5678'
+                    phone: '135****5678',
+                    avatar: ''
                 },
                 originalData: {}
             },
@@ -395,7 +407,8 @@
                         realName: this.formData.name,
                         email: this.formData.email,
                         gender: this.formData.gender === 'female' ? 2 : 1,
-                        birthday: this.formData.birthday || null
+                        birthday: this.formData.birthday || null,
+                        avatar: this.formData.avatar || null
                     }).then((user) => {
                         // 同步本地登录态展示
                         Auth.updateUser(user);
@@ -403,6 +416,34 @@
                         alert('个人资料保存成功！');
                     }).catch((err) => {
                         alert(err.message || '保存失败，请稍后重试');
+                    });
+                },
+                triggerAvatar() {
+                    document.getElementById('avatar-input').click();
+                },
+                handleAvatarUpload(event) {
+                    const file = (event.target.files || [])[0];
+                    event.target.value = '';
+                    if (!file) return;
+                    if (!/^image\//.test(file.type)) { alert('只能上传图片'); return; }
+                    if (file.size > 20 * 1024 * 1024) { alert('图片不能超过 20MB'); return; }
+                    const fd = new FormData();
+                    fd.append('file', file);
+                    // 上传头像到 OSS（avatar 目录），成功后立即保存到个人资料
+                    http.post('/api/files/upload?dir=avatar', fd).then((data) => {
+                        this.formData.avatar = data.url;
+                        return http.put('/api/user/profile', {
+                            realName: this.formData.name,
+                            email: this.formData.email,
+                            gender: this.formData.gender === 'female' ? 2 : 1,
+                            birthday: this.formData.birthday || null,
+                            avatar: data.url
+                        });
+                    }).then((user) => {
+                        Auth.updateUser(user);
+                        alert('头像已更新');
+                    }).catch((err) => {
+                        alert(err.message || '头像上传失败');
                     });
                 },
                 resetForm() {
@@ -416,7 +457,8 @@
                             gender: 'male',
                             birthday: '',
                             email: '',
-                            phone: '135****5678'
+                            phone: '135****5678',
+                            avatar: this.formData.avatar || ''
                         };
                     }
                 },
@@ -427,7 +469,8 @@
                             gender: user.gender === 2 ? 'female' : 'male',
                             birthday: user.birthday || '',
                             email: user.email || '',
-                            phone: user.phone || ''
+                            phone: user.phone || '',
+                            avatar: user.avatar || ''
                         };
                         this.originalData = JSON.parse(JSON.stringify(this.formData));
                     }).catch((err) => {

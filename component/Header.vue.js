@@ -19,7 +19,10 @@ Vue.component('header-component', {
                 </div>
                 <div class="auth">
                     <template v-if="isLoggedIn">
-                        <a href="my-appointment.html" class="user-info">你好, {{ userPhone }}</a>
+                        <a href="personal-info.html" class="user-info" style="display:inline-flex;align-items:center;gap:6px;">
+                            <img :src="userAvatar" alt="头像" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,.6);vertical-align:middle;">
+                            你好, {{ userPhone }}
+                        </a>
                         <a href="javascript:;" class="logout-btn" @click="handleLogout">退出</a>
                     </template>
                     <template v-else>
@@ -40,7 +43,8 @@ Vue.component('header-component', {
         return {
             searchText: '',
             isLoggedIn: false,
-            userPhone: ''
+            userPhone: '',
+            userAvatar: 'img/default-avatar.png'
         };
     },
     mounted() {
@@ -49,6 +53,7 @@ Vue.component('header-component', {
             const user = Auth.user() || {};
             this.isLoggedIn = true;
             this.userPhone = this.formatPhone(user.phone) || user.username || '用户';
+            this.userAvatar = user.avatar || 'img/default-avatar.png';
         }
     },
     methods: {

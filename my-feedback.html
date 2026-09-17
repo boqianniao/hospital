@@ -620,19 +620,31 @@
                     document.getElementById('upload-input').click();
                 },
                 handleUpload(event) {
-                    const files = event.target.files;
-                    if (files) {
-                        Array.from(files).forEach((file, index) => {
-                            if (this.formData.images.length < 3 && index < 3) {
-                                const reader = new FileReader();
-                                reader.onload = (e) => {
-                                    this.formData.images.push(e.target.result);
-                                };
-                                reader.readAsDataURL(file);
-                            }
-                        });
-                    }
+                    const files = Array.from(event.target.files || []);
                     event.target.value = '';
+                    files.forEach((file) => {
+                        if (this.formData.images.length >= 3) {
+                            return;
+                        }
+                        if (!/^image\//.test(file.type)) {
+                            alert('只能上传图片');
+                            return;
+                        }
+                        if (file.size > 20 * 1024 * 1024) {
+                            alert('图片不能超过 20MB');
+                            return;
+                        }
+                        const fd = new FormData();
+                        fd.append('file', file);
+                        // 上传到 OSS（feedback 目录），成功后保存返回的公网 URL
+                        http.post('/api/files/upload?dir=feedback', fd).then((data) => {
+                            if (this.formData.images.length < 3) {
+                                this.formData.images.push(data.url);
+                            }
+                        }).catch((err) => {
+                            alert(err.message || '图片上传失败');
+                        });
+                    });
                 },
                 removeImage(index) {
                     this.formData.images.splice(index, 1);
