@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>我的消息 - 健康之路在线医疗</title>
+    <script src="js/vue.js"></script>
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+        }
+        /* 内容区域 */
+        .content {
+            width: 1200px;
+            margin: 30px auto;
+            display: flex;
+            gap: 25px;
+        }
+        /* 左侧菜单 */
+        .sidebar {
+            width: 240px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .menu-group {
+            margin-bottom: 25px;
+        }
+        .menu-group:last-child {
+            margin-bottom: 0;
+        }
+        .menu-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 12px;
+            padding-left: 10px;
+            border-left: 4px solid #1e88e5;
+        }
+        .menu-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .menu-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #666;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        .menu-item:hover {
+            background-color: #f0f7ff;
+            color: #1e88e5;
+        }
+        .menu-item.active {
+            background-color: #e3f2fd;
+            color: #1e88e5;
+            font-weight: 500;
+        }
+        .menu-item::before {
+            content: '▶';
+            margin-right: 8px;
+            font-size: 10px;
+            color: #999;
+        }
+        .menu-item.active::before {
+            color: #1e88e5;
+        }
+        /* 右侧内容 */
+        .main-content {
+            flex: 1;
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .page-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e3f2fd;
+        }
+        /* 消息列表 */
+        .message-list {
+            border: 1px solid #e8eef3;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .message-item {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .message-item:last-child {
+            border-bottom: none;
+        }
+        .message-item:hover {
+            background-color: #fafbfc;
+        }
+        .message-item.unread {
+            background-color: #f0f7ff;
+        }
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .message-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+        .message-title.unread {
+            color: #1e88e5;
+        }
+        .message-time {
+            font-size: 13px;
+            color: #999;
+        }
+        .message-content {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 80px 0;
+            color: #999;
+        }
+        /* 分页 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        .pagination button {
+            padding: 8px 16px;
+            border: 1px solid #e8eef3;
+            background-color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+        }
+        .pagination button:hover:not(:disabled) {
+            border-color: #1e88e5;
+            color: #1e88e5;
+        }
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .pagination .page-number {
+            display: flex;
+            gap: 5px;
+        }
+        .pagination .page-btn {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+        }
+        .pagination .page-btn.active {
+            background-color: #1e88e5;
+            color: white;
+            border-color: #1e88e5;
+        }
+        .pagination .page-info {
+            margin-left: 15px;
+            color: #999;
+            font-size: 14px;
+        }
+        /* 页脚 */
+        .footer {
+            background-color: #1e88e5;
+            color: white;
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+        .footer-content {
+            width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        .footer-section h4 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #bbdefb;
+        }
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+        .footer-section ul li a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .footer-section ul li a:hover {
+            color: white;
+        }
+        .copyright {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+        }
+    </style>
+    <script src="component/Header.vue.js"></script>
+    <script src="component/Sidebar.vue.js"></script>
+    <script src="component/Footer.vue.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航 -->
+        <header-component :active-nav="''"></header-component>
+
+        <!-- 内容区域 -->
+        <div class="content">
+            <!-- 左侧菜单 -->
+            <sidebar-component 
+                :active-menu="activeMenu" 
+                @menu-change="handleMenuChange"
+            ></sidebar-component>
+
+            <!-- 右侧内容 -->
+            <div class="main-content">
+                <div class="page-title">我的消息</div>
+                
+                <!-- 消息列表 -->
+                <div v-if="messages.length > 0" class="message-list">
+                    <div 
+                        v-for="message in currentPageMessages" 
+                        :key="message.id" 
+                        :class="['message-item', {unread: !message.isRead}]"
+                        @click="markAsRead(message.id)"
+                    >
+                        <div class="message-header">
+                            <span :class="['message-title', {unread: !message.isRead}]">{{ message.title }}</span>
+                            <span class="message-time">{{ message.time }}</span>
+                        </div>
+                        <div class="message-content">{{ message.content }}</div>
+                    </div>
+                </div>
+                <div v-else class="empty-state">
+                    <p>暂无消息</p>
+                </div>
+
+                <!-- 分页 -->
+                <div v-if="messages.length > 0 && totalPages > 1" class="pagination">
+                    <button @click="currentPage--" :disabled="currentPage === 1">上一页</button>
+                    <div class="page-number">
+                        <button 
+                            v-for="page in visiblePages" 
+                            :key="page" 
+                            :class="['page-btn', {active: currentPage === page}]"
+                            @click="currentPage = page"
+                        >
+                            {{ page }}
+                        </button>
+                    </div>
+                    <button @click="currentPage++" :disabled="currentPage === totalPages">下一页</button>
+                    <span class="page-info">共 {{ totalPages }} 页</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer-component></footer-component>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                activeMenu: 'myMessages',
+                currentPage: 1,
+                pageSize: 5,
+                messages: []
+            },
+            computed: {
+                totalPages() {
+                    return Math.ceil(this.messages.length / this.pageSize);
+                },
+                currentPageMessages() {
+                    const start = (this.currentPage - 1) * this.pageSize;
+                    return this.messages.slice(start, start + this.pageSize);
+                },
+                visiblePages() {
+                    const pages = [];
+                    const total = this.totalPages;
+                    const current = this.currentPage;
+                    
+                    if (total <= 5) {
+                        for (let i = 1; i <= total; i++) pages.push(i);
+                    } else {
+                        if (current <= 3) {
+                            pages.push(1, 2, 3, 4, 5);
+                        } else if (current >= total - 2) {
+                            pages.push(total - 4, total - 3, total - 2, total - 1, total);
+                        } else {
+                            pages.push(current - 2, current - 1, current, current + 1, current + 2);
+                        }
+                    }
+                    return pages;
+                }
+            },
+            methods: {
+                handleMenuChange(menu) {
+                    this.activeMenu = menu;
+                    if (menu === 'myAppointment') {
+                        window.location.href = 'my-appointment.html';
+                    } else if (menu === 'myConsult') {
+                        window.location.href = 'my-consult.html';
+                    } else if (menu === 'myReviews') {
+                        window.location.href = 'my-reviews.html';
+                    } else if (menu === 'followHospital') {
+                        window.location.href = 'follow-hospital.html';
+                    } else if (menu === 'followDoctor') {
+                        window.location.href = 'follow-doctor.html';
+                    } else if (menu === 'followDisease') {
+                        window.location.href = 'follow-disease.html';
+                    } else if (menu === 'profile' || menu === 'personalInfo') {
+                        window.location.href = 'personal-info.html';
+                    } else if (menu === 'familyMembers') {
+                        window.location.href = 'family-members.html';
+                    } else if (menu === 'changePassword') {
+                        window.location.href = 'change-password.html';
+                    } else if (menu === 'myFeedback') {
+                        window.location.href = 'my-feedback.html';
+                    }
+                },
+                markAsRead(id) {
+                    const message = this.messages.find(m => m.id === id);
+                    if (message && !message.isRead) {
+                        message.isRead = true;
+                    }
+                },
+                loadMessages() {
+                    // 模拟加载消息数据
+                    this.messages = [
+                        { 
+                            id: 1, 
+                            title: '预约成功通知', 
+                            content: '您预约的北京协和医院心内科张明远医生的号源已成功，请按时前往就诊。就诊时间：2024-03-20 10:00', 
+                            time: '2024-03-15 09:30',
+                            isRead: false
+                        },
+                        { 
+                            id: 2, 
+                            title: '医生回复提醒', 
+                            content: '您咨询的关于高血压用药问题，王建国医生已回复，请及时查看。', 
+                            time: '2024-03-14 16:20',
+                            isRead: false
+                        },
+                        { 
+                            id: 3, 
+                            title: '健康资讯推荐', 
+                            content: '春季是呼吸道疾病高发期，请注意做好防护措施，保持室内通风，适当锻炼增强体质。', 
+                            time: '2024-03-13 10:00',
+                            isRead: true
+                        },
+                        { 
+                            id: 4, 
+                            title: '评价提醒', 
+                            content: '您的就诊已完成，欢迎对医生进行评价，您的反馈对我们非常重要。', 
+                            time: '2024-03-12 15:45',
+                            isRead: true
+                        },
+                        { 
+                            id: 5, 
+                            title: '系统维护通知', 
+                            content: '系统将于2024-03-18 22:00-24:00进行维护升级，期间可能影响部分功能使用，请提前做好安排。', 
+                            time: '2024-03-11 08:00',
+                            isRead: true
+                        },
+                        { 
+                            id: 6, 
+                            title: '挂号成功通知', 
+                            content: '您预约的上海瑞金医院呼吸内科李秀华医生的号源已成功，请按时前往就诊。', 
+                            time: '2024-03-10 11:30',
+                            isRead: true
+                        }
+                    ];
+                }
+            },
+            mounted() {
+                this.loadMessages();
+            }
+        });
+    </script>
+</body>
+</html>

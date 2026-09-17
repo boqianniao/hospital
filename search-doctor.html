@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>搜索医生 - 健康之路在线医疗</title>
+    <script src="js/vue.js"></script>
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+        }
+        /* 内容区域 */
+        .content {
+            width: 1200px;
+            margin: 30px auto;
+        }
+        /* 搜索提示区域 */
+        .section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e3f2fd;
+        }
+        .search-tip {
+            font-size: 14px;
+            color: #666;
+        }
+        .search-tip strong {
+            color: #1e88e5;
+        }
+        /* 选项卡 */
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid #e8eef3;
+            margin-bottom: 20px;
+        }
+        .tab-item {
+            padding: 12px 30px;
+            font-size: 15px;
+            color: #666;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s;
+        }
+        .tab-item:hover {
+            color: #1e88e5;
+        }
+        .tab-item.active {
+            color: #1e88e5;
+            font-weight: bold;
+        }
+        .tab-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #1e88e5;
+        }
+        /* 医生列表 */
+        .doctor-list {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+        }
+        .doctor-item {
+            text-align: center;
+            padding: 15px;
+            background-color: #fafbfc;
+            border-radius: 8px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            border: 1px solid #e8eef3;
+        }
+        .doctor-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(30, 136, 229, 0.15);
+            border-color: #1e88e5;
+        }
+        .doctor-item img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            object-fit: cover;
+            border: 3px solid #e8eef3;
+        }
+        .doctor-item:hover img {
+            border-color: #1e88e5;
+        }
+        .doctor-item h3 {
+            color: #333;
+            font-size: 15px;
+            margin-bottom: 5px;
+        }
+        .doctor-item .department {
+            color: #1e88e5;
+            font-size: 13px;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .doctor-item .hospital {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+        .doctor-item .title {
+            background-color: #e3f2fd;
+            color: #1e88e5;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+        .doctor-item .tags {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            justify-content: center;
+        }
+        .doctor-item .tag {
+            background-color: #fff3e0;
+            color: #f57c00;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        .doctor-item .online {
+            background-color: #4caf50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin-top: 8px;
+            display: inline-block;
+        }
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 0;
+            color: #999;
+        }
+        .empty-state p {
+            font-size: 16px;
+        }
+        /* 分页 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        .pagination button {
+            padding: 8px 16px;
+            border: 1px solid #e8eef3;
+            background-color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+            transition: all 0.3s;
+        }
+        .pagination button:hover:not(:disabled) {
+            border-color: #1e88e5;
+            color: #1e88e5;
+        }
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .pagination .page-number {
+            display: flex;
+            gap: 5px;
+        }
+        .pagination .page-btn {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+        }
+        .pagination .page-btn.active {
+            background-color: #1e88e5;
+            color: white;
+            border-color: #1e88e5;
+        }
+        .pagination .page-info {
+            margin-left: 15px;
+            color: #999;
+            font-size: 14px;
+        }
+        /* 页脚 */
+        .footer {
+            background-color: #1e88e5;
+            color: white;
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+        .footer-content {
+            width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        .footer-section h4 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #bbdefb;
+        }
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+        .footer-section ul li a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .footer-section ul li a:hover {
+            color: white;
+        }
+        .copyright {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+        }
+    </style>
+    <script src="component/Header.vue.js"></script>
+    <script src="component/Footer.vue.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航 -->
+        <header-component :active-nav="''"></header-component>
+
+        <!-- 内容区域 -->
+        <div class="content">
+            <!-- 搜索提示 -->
+            <div class="section">
+                <div v-if="keyword" class="search-tip">
+                    搜索关键词：<strong>{{ keyword }}</strong>，共找到 <strong>{{ total }}</strong> 个医生
+                </div>
+                <div v-else class="search-tip">
+                    请在顶部搜索框输入关键词进行搜索
+                </div>
+            </div>
+
+            <!-- 医生列表 -->
+            <div class="section">
+                <!-- 选项卡 -->
+                <div class="tabs">
+                    <div 
+                        v-for="tab in tabs" 
+                        :key="tab.value"
+                        :class="['tab-item', {active: currentTab === tab.value}]"
+                        @click="switchTab(tab.value)"
+                    >
+                        {{ tab.name }}
+                    </div>
+                </div>
+
+                <div v-if="doctors.length > 0" class="doctor-list">
+                    <div 
+                        v-for="doctor in currentPageDoctors" 
+                        :key="doctor.id" 
+                        class="doctor-item"
+                        @click="goToDetail(doctor.id)"
+                    >
+                        <img :src="doctor.avatar" :alt="doctor.name">
+                        <h3>{{ doctor.name }}</h3>
+                        <div class="department">{{ doctor.department }}</div>
+                        <div class="hospital">{{ doctor.hospital }}</div>
+                        <div class="title">{{ doctor.title }}</div>
+                    </div>
+                </div>
+                <div v-else class="empty-state">
+                    <p>未找到相关医生</p>
+                </div>
+
+                <!-- 分页 -->
+                <div v-if="totalPages > 1" class="pagination">
+                    <button @click="prevPage" :disabled="currentPage === 1">上一页</button>
+                    <div class="page-number">
+                        <button 
+                            v-for="page in visiblePages" 
+                            :key="page" 
+                            :class="['page-btn', {active: currentPage === page}]"
+                            @click="goToPage(page)"
+                        >
+                            {{ page }}
+                        </button>
+                    </div>
+                    <button @click="nextPage" :disabled="currentPage === totalPages">下一页</button>
+                    <span class="page-info">
+                        第 {{ currentPage }} / {{ totalPages }} 页，共 {{ total }} 条
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer-component></footer-component>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                keyword: '',
+                currentTab: 'doctor',
+                tabs: [
+                    { name: '医院', value: 'hospital' },
+                    { name: '医生', value: 'doctor' },
+                    { name: '疾病', value: 'disease' },
+                    { name: '健康科普', value: 'article' }
+                ],
+                currentPage: 1,
+                pageSize: 5,
+                doctors: [],
+                allDoctors: []
+            },
+            computed: {
+                totalPages() {
+                    return Math.ceil(this.doctors.length / this.pageSize);
+                },
+                currentPageDoctors() {
+                    const start = (this.currentPage - 1) * this.pageSize;
+                    return this.doctors.slice(start, start + this.pageSize);
+                },
+                visiblePages() {
+                    const pages = [];
+                    const total = this.totalPages;
+                    const current = this.currentPage;
+                    
+                    if (total <= 5) {
+                        for (let i = 1; i <= total; i++) pages.push(i);
+                    } else {
+                        if (current <= 3) {
+                            pages.push(1, 2, 3, 4, 5);
+                        } else if (current >= total - 2) {
+                            pages.push(total - 4, total - 3, total - 2, total - 1, total);
+                        } else {
+                            pages.push(current - 2, current - 1, current, current + 1, current + 2);
+                        }
+                    }
+                    return pages;
+                },
+                total() {
+                    return this.doctors.length;
+                }
+            },
+            methods: {
+                getUrlParam(name) {
+                    const reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+                    const r = window.location.search.substr(1).match(reg);
+                    if (r != null) return decodeURIComponent(r[2]);
+                    return null;
+                },
+                switchTab(tabValue) {
+                    this.currentTab = tabValue;
+                    if (tabValue === 'hospital') {
+                        window.location.href = 'search-hospital.html?keyword=' + encodeURIComponent(this.keyword);
+                    } else if (tabValue === 'doctor') {
+                        window.location.href = 'search-doctor.html?keyword=' + encodeURIComponent(this.keyword);
+                    } else if (tabValue === 'disease') {
+                        window.location.href = 'search-disease.html?keyword=' + encodeURIComponent(this.keyword);
+                    } else if (tabValue === 'article') {
+                        window.location.href = 'search-article.html?keyword=' + encodeURIComponent(this.keyword);
+                    }
+                },
+                goToDetail(id) {
+                    window.location.href = 'doctor-detail.html?doctorId=' + id;
+                },
+                searchDoctors(keyword) {
+                    if (!keyword) {
+                        this.doctors = this.allDoctors;
+                        return;
+                    }
+                    keyword = keyword.toLowerCase();
+                    this.doctors = this.allDoctors.filter(d => 
+                        d.name.toLowerCase().includes(keyword) ||
+                        d.department.toLowerCase().includes(keyword) ||
+                        d.hospital.toLowerCase().includes(keyword)
+                    );
+                    this.currentPage = 1;
+                },
+                prevPage() {
+                    if (this.currentPage > 1) {
+                        this.currentPage--;
+                    }
+                },
+                nextPage() {
+                    if (this.currentPage < this.totalPages) {
+                        this.currentPage++;
+                    }
+                },
+                goToPage(page) {
+                    this.currentPage = page;
+                },
+                loadDoctors() {
+                    // 模拟医生数据，与 doctor.html 一致
+                    this.allDoctors = [
+                        { id: 1, name: '张明远', department: '心内科', hospital: '北京协和医院', title: '主任医师', avatar: 'img/doctor-male-doc.jpg', tags: ['高血压', '冠心病'], online: true },
+                        { id: 2, name: '王秀英', department: '神经内科', hospital: '上海瑞金医院', title: '副主任医师', avatar: 'img/doctor-female-doc.jpg', tags: ['头痛', '眩晕'], online: true },
+                        { id: 3, name: '李建国', department: '骨科', hospital: '广州中山医院', title: '主任医师', avatar: 'img/doctor-male-doc.jpg', tags: ['骨折', '关节炎'], online: false },
+                        { id: 4, name: '陈丽华', department: '妇产科', hospital: '杭州浙一医院', title: '主治医师', avatar: 'img/doctor-female-doc.jpg', tags: ['妇科炎症', '月经不调'], online: true },
+                        { id: 5, name: '赵伟东', department: '消化内科', hospital: '武汉同济医院', title: '主任医师', avatar: 'img/doctor-male-doc.jpg', tags: ['胃炎', '肠炎'], online: true },
+                        { id: 6, name: '孙晓敏', department: '儿科', hospital: '成都华西医院', title: '副主任医师', avatar: 'img/doctor-female-doc.jpg', tags: ['感冒', '发热'], online: false },
+                        { id: 7, name: '周志刚', department: '呼吸内科', hospital: '南京鼓楼医院', title: '主任医师', avatar: 'img/doctor-male-doc.jpg', tags: ['肺炎', '支气管炎'], online: true },
+                        { id: 8, name: '吴美玲', department: '皮肤科', hospital: '西安西京医院', title: '主治医师', avatar: 'img/doctor-female-doc.jpg', tags: ['湿疹', '荨麻疹'], online: true },
+                        { id: 9, name: '郑海涛', department: '眼科', hospital: '天津总医院', title: '主任医师', avatar: 'img/doctor-male-doc.jpg', tags: ['白内障', '青光眼'], online: false },
+                        { id: 10, name: '冯婉清', department: '口腔科', hospital: '北京天坛医院', title: '副主任医师', avatar: 'img/doctor-female-doc.jpg', tags: ['牙周炎', '口腔溃疡'], online: true },
+                        { id: 11, name: '林志豪', department: '泌尿外科', hospital: '上海华山医院', title: '主任医师', avatar: 'img/doctor-male-doc.jpg', tags: ['结石', '前列腺炎'], online: true },
+                        { id: 12, name: '韩静怡', department: '内分泌科', hospital: '广东省人民医院', title: '主治医师', avatar: 'img/doctor-female-doc.jpg', tags: ['糖尿病', '甲亢'], online: false },
+                        { id: 13, name: '黄文博', department: '肿瘤科', hospital: '南京鼓楼医院', title: '主任医师', avatar: 'img/doctor-male-doc.jpg', tags: ['化疗', '放疗'], online: true },
+                        { id: 14, name: '许雅婷', department: '中医科', hospital: '杭州浙一医院', title: '副主任医师', avatar: 'img/doctor-female-doc.jpg', tags: ['调理', '针灸'], online: true },
+                        { id: 15, name: '马晓峰', department: '心外科', hospital: '武汉同济医院', title: '主任医师', avatar: 'img/doctor-male-doc.jpg', tags: ['搭桥', '支架'], online: false }
+                    ];
+                    this.doctors = [...this.allDoctors];
+                }
+            },
+            mounted() {
+                this.keyword = this.getUrlParam('keyword') || '';
+                this.loadDoctors();
+                if (this.keyword) {
+                    this.searchDoctors(this.keyword);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

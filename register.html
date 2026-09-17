@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>注册 - 健康之路在线医疗</title>
+    <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #1e88e5 0%, #42a5f5 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .register-container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo img {
+            width: 70px;
+            height: 70px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+        .logo h1 {
+            color: #1e88e5;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .form-group .input-row {
+            display: flex;
+            gap: 10px;
+        }
+        .form-group .input-row input:first-child {
+            flex: 1;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e8eef3;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            outline: none;
+        }
+        .form-group input:focus {
+            border-color: #1e88e5;
+            box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
+        }
+        .form-group input.error {
+            border-color: #ef5350;
+        }
+        .form-group .error-message {
+            color: #ef5350;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        .form-group .error-message.show {
+            display: block;
+        }
+        .captcha-btn {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #1e88e5 0%, #42a5f5 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            white-space: nowrap;
+        }
+        .captcha-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(30, 136, 229, 0.4);
+        }
+        .captcha-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .form-options {
+            margin-bottom: 25px;
+            font-size: 13px;
+        }
+        .form-options label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            color: #666;
+        }
+        .form-options input[type="checkbox"] {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+        }
+        .form-options a {
+            color: #1e88e5;
+            text-decoration: none;
+        }
+        .form-options a:hover {
+            text-decoration: underline;
+        }
+        .register-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #1e88e5 0%, #42a5f5 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .register-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(30, 136, 229, 0.4);
+        }
+        .register-btn:active {
+            transform: translateY(0);
+        }
+        .register-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .login-link {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid #e8eef3;
+            font-size: 14px;
+            color: #666;
+        }
+        .login-link a {
+            color: #1e88e5;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+        .success-message {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+        .success-message.show {
+            display: block;
+        }
+        .error-alert {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+        .error-alert.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="register-container">
+        <div class="logo">
+            <h1>健康之路在线医疗</h1>
+        </div>
+
+        <div class="success-message" :class="{show: showSuccess}">
+            {{ successMessage }}
+        </div>
+
+        <div class="error-alert" :class="{show: showError}">
+            {{ errorMessage }}
+        </div>
+
+        <div class="form-group">
+            <label for="phone">手机号</label>
+            <input 
+                type="tel" 
+                id="phone" 
+                v-model="form.phone" 
+                :class="{error: errors.phone}"
+                placeholder="请输入手机号"
+                maxlength="11"
+            >
+            <div class="error-message" :class="{show: errors.phone}">{{ errors.phone }}</div>
+        </div>
+
+        <div class="form-group">
+            <label for="password">密码</label>
+            <input 
+                type="password" 
+                id="password" 
+                v-model="form.password" 
+                :class="{error: errors.password}"
+                placeholder="请输入密码（至少6位）"
+            >
+            <div class="error-message" :class="{show: errors.password}">{{ errors.password }}</div>
+        </div>
+
+        <div class="form-group">
+            <label for="confirmPassword">确认密码</label>
+            <input 
+                type="password" 
+                id="confirmPassword" 
+                v-model="form.confirmPassword" 
+                :class="{error: errors.confirmPassword}"
+                placeholder="请再次输入密码"
+            >
+            <div class="error-message" :class="{show: errors.confirmPassword}">{{ errors.confirmPassword }}</div>
+        </div>
+
+        <div class="form-group">
+            <label for="captcha">短信验证码</label>
+            <div class="input-row">
+                <input 
+                    type="tel" 
+                    id="captcha" 
+                    v-model="form.captcha" 
+                    :class="{error: errors.captcha}"
+                    placeholder="请输入验证码"
+                    maxlength="6"
+                >
+                <button class="captcha-btn" :disabled="captchaDisabled || !form.phone" @click="sendCaptcha">
+                    {{ captchaText }}
+                </button>
+            </div>
+            <div class="error-message" :class="{show: errors.captcha}">{{ errors.captcha }}</div>
+        </div>
+
+        <div class="form-options">
+            <label>
+                <input type="checkbox" v-model="form.agree">
+                我已阅读并同意 <a href="#">《用户协议》</a> 和 <a href="#">《隐私政策》</a>
+            </label>
+        </div>
+
+        <button class="register-btn" :disabled="loading" @click="handleRegister">
+            <span v-if="loading">注册中...</span>
+            <span v-else>注 册</span>
+        </button>
+
+        <div class="login-link">
+            已有账号？ <a href="login.html">立即登录</a>
+        </div>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                form: {
+                    phone: '',
+                    password: '',
+                    confirmPassword: '',
+                    captcha: '',
+                    agree: false
+                },
+                errors: {
+                    phone: '',
+                    password: '',
+                    confirmPassword: '',
+                    captcha: '',
+                    agree: ''
+                },
+                loading: false,
+                showSuccess: false,
+                showError: false,
+                successMessage: '',
+                errorMessage: '',
+                captchaDisabled: false,
+                captchaText: '获取验证码',
+                captchaCountdown: 60,
+                generatedCaptcha: ''
+            },
+            methods: {
+                validatePhone(phone) {
+                    const phoneRegex = /^1[3-9]\d{9}$/;
+                    return phoneRegex.test(phone);
+                },
+                validateForm() {
+                    let isValid = true;
+                    this.errors = { phone: '', password: '', confirmPassword: '', captcha: '', agree: '' };
+
+                    if (!this.form.phone) {
+                        this.errors.phone = '请输入手机号';
+                        isValid = false;
+                    } else if (!this.validatePhone(this.form.phone)) {
+                        this.errors.phone = '请输入有效的手机号';
+                        isValid = false;
+                    }
+
+                    if (!this.form.password) {
+                        this.errors.password = '请输入密码';
+                        isValid = false;
+                    } else if (this.form.password.length < 6) {
+                        this.errors.password = '密码长度不能少于6位';
+                        isValid = false;
+                    }
+
+                    if (!this.form.confirmPassword) {
+                        this.errors.confirmPassword = '请确认密码';
+                        isValid = false;
+                    } else if (this.form.password !== this.form.confirmPassword) {
+                        this.errors.confirmPassword = '两次输入的密码不一致';
+                        isValid = false;
+                    }
+
+                    if (!this.form.captcha) {
+                        this.errors.captcha = '请输入验证码';
+                        isValid = false;
+                    } else if (this.form.captcha !== this.generatedCaptcha) {
+                        this.errors.captcha = '验证码错误';
+                        isValid = false;
+                    }
+
+                    if (!this.form.agree) {
+                        this.errorMessage = '请先阅读并同意用户协议和隐私政策';
+                        this.showError = true;
+                        isValid = false;
+                    }
+
+                    return isValid;
+                },
+                sendCaptcha() {
+                    if (!this.form.phone || !this.validatePhone(this.form.phone)) {
+                        this.errors.phone = '请输入有效的手机号';
+                        return;
+                    }
+
+                    this.captchaDisabled = true;
+                    this.generatedCaptcha = Math.floor(100000 + Math.random() * 900000).toString();
+                    
+                    alert(`验证码已发送，您的验证码是：${this.generatedCaptcha}`);
+
+                    let count = this.captchaCountdown;
+                    const timer = setInterval(() => {
+                        count--;
+                        this.captchaText = `${count}秒后重发`;
+                        
+                        if (count <= 0) {
+                            clearInterval(timer);
+                            this.captchaDisabled = false;
+                            this.captchaText = '获取验证码';
+                        }
+                    }, 1000);
+                },
+                handleRegister() {
+                    if (!this.validateForm()) {
+                        return;
+                    }
+
+                    this.loading = true;
+                    this.showError = false;
+                    this.showSuccess = false;
+
+                    setTimeout(() => {
+                        const mockUsers = JSON.parse(localStorage.getItem('users') || '[]');
+                        const existingUser = mockUsers.find(u => u.phone === this.form.phone);
+
+                        if (existingUser) {
+                            this.errorMessage = '该手机号已注册';
+                            this.showError = true;
+                            this.loading = false;
+                            return;
+                        }
+
+                        const newUser = {
+                            id: Date.now(),
+                            phone: this.form.phone,
+                            password: this.form.password,
+                            createdAt: new Date().toISOString()
+                        };
+
+                        mockUsers.push(newUser);
+                        localStorage.setItem('users', JSON.stringify(mockUsers));
+
+                        this.successMessage = '注册成功，即将跳转登录页面...';
+                        this.showSuccess = true;
+
+                        setTimeout(() => {
+                            window.location.href = 'login.html';
+                        }, 1500);
+                    }, 800);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>搜索结果 - 健康之路在线医疗</title>
+    <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+        }
+        /* 内容区域 */
+        .content {
+            width: 1200px;
+            margin: 30px auto;
+        }
+        /* 选项卡 */
+        .tabs {
+            display: flex;
+            background-color: white;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .tab-item {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s;
+        }
+        .tab-item.active {
+            background-color: #1e88e5;
+            color: white;
+        }
+        .tab-item:hover:not(.active) {
+            background-color: #f0f7ff;
+            color: #1e88e5;
+        }
+        /* 搜索关键词 */
+        .search-keyword {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            font-size: 14px;
+            color: #666;
+        }
+        /* 医院列表 */
+        .hospital-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        .hospital-item {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .hospital-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(30, 136, 229, 0.15);
+        }
+        .hospital-item img {
+            width: 150px;
+            height: 100px;
+            border-radius: 6px;
+            object-fit: cover;
+        }
+        .hospital-item .hospital-info {
+            flex: 1;
+        }
+        .hospital-item .hospital-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .hospital-item .hospital-level {
+            display: inline-block;
+            background-color: #e3f2fd;
+            color: #1e88e5;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        .hospital-item .hospital-address {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .hospital-item .hospital-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .hospital-item .tag {
+            background-color: #fff3e0;
+            color: #f57c00;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        /* 医生列表 */
+        .doctor-list {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+        }
+        .doctor-item {
+            text-align: center;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .doctor-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(30, 136, 229, 0.15);
+        }
+        .doctor-item .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            object-fit: cover;
+            border: 3px solid #e8eef3;
+        }
+        .doctor-item h3 {
+            color: #333;
+            font-size: 15px;
+            margin-bottom: 5px;
+        }
+        .doctor-item .department {
+            color: #1e88e5;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+        .doctor-item .title {
+            background-color: #e3f2fd;
+            color: #1e88e5;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+        .doctor-item .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            justify-content: center;
+        }
+        .doctor-item .tag {
+            background-color: #fff3e0;
+            color: #f57c00;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+        .doctor-item .online {
+            display: inline-block;
+            background-color: #1e88e5;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            margin-top: 8px;
+        }
+        /* 疾病列表 */
+        .disease-list {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .disease-item {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .disease-item:last-child {
+            border-bottom: none;
+        }
+        .disease-item:hover {
+            background-color: #fafbfc;
+        }
+        .disease-item .disease-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .disease-item .disease-desc {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        /* 文章列表 */
+        .article-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        .article-item {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .article-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(30, 136, 229, 0.15);
+        }
+        .article-item img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+        .article-item .article-info {
+            padding: 15px;
+        }
+        .article-item .article-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        .article-item .article-desc {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .article-item .article-meta {
+            display: flex;
+            justify-content: space-between;
+            color: #999;
+            font-size: 12px;
+        }
+        /* 分页 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        .pagination button {
+            padding: 8px 16px;
+            border: 1px solid #e8eef3;
+            background-color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+        }
+        .pagination button:hover:not(:disabled) {
+            border-color: #1e88e5;
+            color: #1e88e5;
+        }
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .pagination .page-number {
+            display: flex;
+            gap: 5px;
+        }
+        .pagination .page-btn {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+        }
+        .pagination .page-btn.active {
+            background-color: #1e88e5;
+            color: white;
+            border-color: #1e88e5;
+        }
+        .pagination .page-info {
+            margin-left: 15px;
+            color: #999;
+            font-size: 14px;
+        }
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 80px 0;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            color: #999;
+        }
+        /* 页脚 */
+        .footer {
+            background-color: #1e88e5;
+            color: white;
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+        .footer-content {
+            width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        .footer-section h4 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #bbdefb;
+        }
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+        .footer-section ul li a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .footer-section ul li a:hover {
+            color: white;
+        }
+        .copyright {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+        }
+    </style>
+    <script src="component/Header.vue.js"></script>
+    <script src="component/Footer.vue.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航 -->
+        <header-component :active-nav="''"></header-component>
+
+        <!-- 内容区域 -->
+        <div class="content">
+            <!-- 搜索关键词 -->
+            <div class="search-keyword">
+                搜索结果："<span style="color: #1e88e5; font-weight: bold;">{{ keyword }}</span>"
+            </div>
+
+            <!-- 选项卡 -->
+            <div class="tabs">
+                <div 
+                    v-for="tab in tabs" 
+                    :key="tab.key" 
+                    :class="['tab-item', {active: activeTab === tab.key}]"
+                    @click="activeTab = tab.key"
+                >
+                    {{ tab.name }}
+                    <span v-if="getTabCount(tab.key) > 0" style="margin-left: 5px;">({{ getTabCount(tab.key) }})</span>
+                </div>
+            </div>
+
+            <!-- 医院搜索结果 -->
+            <div v-if="activeTab === 'hospital'">
+                <div v-if="filteredHospitals.length > 0" class="hospital-list">
+                    <div 
+                        v-for="hospital in currentHospitalPage" 
+                        :key="hospital.id" 
+                        class="hospital-item"
+                        @click="goToHospitalDetail(hospital.id)"
+                    >
+                        <img :src="hospital.image" :alt="hospital.name">
+                        <div class="hospital-info">
+                            <div class="hospital-name">{{ hospital.name }}</div>
+                            <span class="hospital-level">{{ hospital.level }}</span>
+                            <div class="hospital-address">{{ hospital.address }}</div>
+                            <div class="hospital-tags">
+                                <span v-for="tag in hospital.tags" :key="tag" class="tag">{{ tag }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div v-else class="empty-state">
+                    <p>未找到相关医院</p>
+                </div>
+                <!-- 分页 -->
+                <div v-if="hospitalPages > 1" class="pagination">
+                    <button @click="hospitalPage--" :disabled="hospitalPage === 1">上一页</button>
+                    <div class="page-number">
+                        <button 
+                            v-for="page in getHospitalVisiblePages" 
+                            :key="page" 
+                            :class="['page-btn', {active: hospitalPage === page}]"
+                            @click="hospitalPage = page"
+                        >
+                            {{ page }}
+                        </button>
+                    </div>
+                    <button @click="hospitalPage++" :disabled="hospitalPage === hospitalPages">下一页</button>
+                    <span class="page-info">第 {{ hospitalPage }} / {{ hospitalPages }} 页</span>
+                </div>
+            </div>
+
+            <!-- 医生搜索结果 -->
+            <div v-if="activeTab === 'doctor'">
+                <div v-if="filteredDoctors.length > 0" class="doctor-list">
+                    <div v-for="doctor in currentDoctorPage" :key="doctor.id" class="doctor-item" @click="goToDoctorDetail(doctor.id)">
+                        <img :src="doctor.avatar" :alt="doctor.name" class="avatar">
+                        <h3>{{ doctor.name }}</h3>
+                        <div class="department">{{ doctor.department }}</div>
+                        <div class="title">{{ doctor.title }}</div>
+                        <div class="tags">
+                            <span v-for="tag in doctor.tags" :key="tag" class="tag">{{ tag }}</span>
+                        </div>
+                        <div v-if="doctor.online" class="online">在线</div>
+                    </div>
+                </div>
+                <div v-else class="empty-state">
+                    <p>未找到相关医生</p>
+                </div>
+                <!-- 分页 -->
+                <div v-if="doctorPages > 1" class="pagination">
+                    <button @click="doctorPage--" :disabled="doctorPage === 1">上一页</button>
+                    <div class="page-number">
+                        <button 
+                            v-for="page in getDoctorVisiblePages" 
+                            :key="page" 
+                            :class="['page-btn', {active: doctorPage === page}]"
+                            @click="doctorPage = page"
+                        >
+                            {{ page }}
+                        </button>
+                    </div>
+                    <button @click="doctorPage++" :disabled="doctorPage === doctorPages">下一页</button>
+                    <span class="page-info">第 {{ doctorPage }} / {{ doctorPages }} 页</span>
+                </div>
+            </div>
+
+            <!-- 疾病搜索结果 -->
+            <div v-if="activeTab === 'disease'">
+                <div v-if="filteredDiseases.length > 0" class="disease-list">
+                    <div v-for="disease in currentDiseasePage" :key="disease.id" class="disease-item" @click="goToDiseaseDetail(disease.id)">
+                        <div class="disease-name">{{ disease.name }}</div>
+                        <div class="disease-desc">{{ disease.description }}</div>
+                    </div>
+                </div>
+                <div v-else class="empty-state">
+                    <p>未找到相关疾病</p>
+                </div>
+                <!-- 分页 -->
+                <div v-if="diseasePages > 1" class="pagination">
+                    <button @click="diseasePage--" :disabled="diseasePage === 1">上一页</button>
+                    <div class="page-number">
+                        <button 
+                            v-for="page in getDiseaseVisiblePages" 
+                            :key="page" 
+                            :class="['page-btn', {active: diseasePage === page}]"
+                            @click="diseasePage = page"
+                        >
+                            {{ page }}
+                        </button>
+                    </div>
+                    <button @click="diseasePage++" :disabled="diseasePage === diseasePages">下一页</button>
+                    <span class="page-info">第 {{ diseasePage }} / {{ diseasePages }} 页</span>
+                </div>
+            </div>
+
+            <!-- 健康科普搜索结果 -->
+            <div v-if="activeTab === 'article'">
+                <div v-if="filteredArticles.length > 0" class="article-list">
+                    <div v-for="article in currentArticlePage" :key="article.id" class="article-item" @click="goToArticleDetail(article.id)">
+                        <img :src="article.image" :alt="article.title">
+                        <div class="article-info">
+                            <div class="article-title">{{ article.title }}</div>
+                            <div class="article-desc">{{ article.summary }}</div>
+                            <div class="article-meta">
+                                <span>{{ article.category }}</span>
+                                <span>{{ article.createTime }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div v-else class="empty-state">
+                    <p>未找到相关文章</p>
+                </div>
+                <!-- 分页 -->
+                <div v-if="articlePages > 1" class="pagination">
+                    <button @click="articlePage--" :disabled="articlePage === 1">上一页</button>
+                    <div class="page-number">
+                        <button 
+                            v-for="page in getArticleVisiblePages" 
+                            :key="page" 
+                            :class="['page-btn', {active: articlePage === page}]"
+                            @click="articlePage = page"
+                        >
+                            {{ page }}
+                        </button>
+                    </div>
+                    <button @click="articlePage++" :disabled="articlePage === articlePages">下一页</button>
+                    <span class="page-info">第 {{ articlePage }} / {{ articlePages }} 页</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer-component></footer-component>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                keyword: '',
+                activeTab: 'hospital',
+                tabs: [
+                    { key: 'hospital', name: '医院' },
+                    { key: 'doctor', name: '医生' },
+                    { key: 'disease', name: '疾病' },
+                    { key: 'article', name: '健康科普' }
+                ],
+                // 数据
+                hospitals: [],
+                doctors: [],
+                diseases: [],
+                articles: [],
+                // 分页
+                hospitalPage: 1,
+                doctorPage: 1,
+                diseasePage: 1,
+                articlePage: 1,
+                pageSize: 10
+            },
+            computed: {
+                filteredHospitals() {
+                    if (!this.keyword) return this.hospitals;
+                    const kw = this.keyword.toLowerCase();
+                    return this.hospitals.filter(h => 
+                        h.name.toLowerCase().includes(kw) || 
+                        h.address.toLowerCase().includes(kw)
+                    );
+                },
+                filteredDoctors() {
+                    if (!this.keyword) return this.doctors;
+                    const kw = this.keyword.toLowerCase();
+                    return this.doctors.filter(d => 
+                        d.name.toLowerCase().includes(kw) || 
+                        d.department.toLowerCase().includes(kw)
+                    );
+                },
+                filteredDiseases() {
+                    if (!this.keyword) return this.diseases;
+                    const kw = this.keyword.toLowerCase();
+                    return this.diseases.filter(d => 
+                        d.name.toLowerCase().includes(kw) || 
+                        d.description.toLowerCase().includes(kw)
+                    );
+                },
+                filteredArticles() {
+                    if (!this.keyword) return this.articles;
+                    const kw = this.keyword.toLowerCase();
+                    return this.articles.filter(a => 
+                        a.title.toLowerCase().includes(kw) || 
+                        a.summary.toLowerCase().includes(kw)
+                    );
+                },
+                hospitalPages() {
+                    return Math.ceil(this.filteredHospitals.length / this.pageSize);
+                },
+                doctorPages() {
+                    return Math.ceil(this.filteredDoctors.length / this.pageSize);
+                },
+                diseasePages() {
+                    return Math.ceil(this.filteredDiseases.length / this.pageSize);
+                },
+                articlePages() {
+                    return Math.ceil(this.filteredArticles.length / this.pageSize);
+                },
+                currentHospitalPage() {
+                    const start = (this.hospitalPage - 1) * this.pageSize;
+                    return this.filteredHospitals.slice(start, start + this.pageSize);
+                },
+                currentDoctorPage() {
+                    const start = (this.doctorPage - 1) * this.pageSize;
+                    return this.filteredDoctors.slice(start, start + this.pageSize);
+                },
+                currentDiseasePage() {
+                    const start = (this.diseasePage - 1) * this.pageSize;
+                    return this.filteredDiseases.slice(start, start + this.pageSize);
+                },
+                currentArticlePage() {
+                    const start = (this.articlePage - 1) * this.pageSize;
+                    return this.filteredArticles.slice(start, start + this.pageSize);
+                },
+                getHospitalVisiblePages() {
+                    return this.getVisiblePages(this.hospitalPage, this.hospitalPages);
+                },
+                getDoctorVisiblePages() {
+                    return this.getVisiblePages(this.doctorPage, this.doctorPages);
+                },
+                getDiseaseVisiblePages() {
+                    return this.getVisiblePages(this.diseasePage, this.diseasePages);
+                },
+                getArticleVisiblePages() {
+                    return this.getVisiblePages(this.articlePage, this.articlePages);
+                }
+            },
+            methods: {
+                getUrlParam(name) {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    return urlParams.get(name) || '';
+                },
+                getTabCount(key) {
+                    switch (key) {
+                        case 'hospital': return this.filteredHospitals.length;
+                        case 'doctor': return this.filteredDoctors.length;
+                        case 'disease': return this.filteredDiseases.length;
+                        case 'article': return this.filteredArticles.length;
+                        default: return 0;
+                    }
+                },
+                getVisiblePages(current, total) {
+                    const pages = [];
+                    if (total <= 5) {
+                        for (let i = 1; i <= total; i++) pages.push(i);
+                    } else {
+                        if (current <= 3) {
+                            pages.push(1, 2, 3, 4, 5);
+                        } else if (current >= total - 2) {
+                            pages.push(total - 4, total - 3, total - 2, total - 1, total);
+                        } else {
+                            pages.push(current - 2, current - 1, current, current + 1, current + 2);
+                        }
+                    }
+                    return pages;
+                },
+                loadData() {
+                    // 医院数据
+                    this.hospitals = [
+                        { id: 1, name: '北京协和医院', level: '三级甲等', image: 'img/hospital_100001977.jpg', address: '北京市东城区东单北大街', tags: ['综合', '三甲'] },
+                        { id: 2, name: '上海瑞金医院', level: '三级甲等', image: 'img/hospital_14616536073112.jpg', address: '上海市黄浦区瑞金二路', tags: ['综合', '三甲'] },
+                        { id: 3, name: '广州中山医院', level: '三级甲等', image: 'img/hospital_16043929044175.jpg', address: '广州市越秀区东风西路', tags: ['综合', '三甲'] },
+                        { id: 4, name: '杭州浙一医院', level: '三级甲等', image: 'img/hospital_16195932543164.png', address: '杭州市上城区庆春路', tags: ['综合', '三甲'] }
+                    ];
+                    // 医生数据
+                    this.doctors = [
+                        { id: 1, name: '张明远', department: '心内科', avatar: 'img/doctor-male-doc.jpg', title: '主任医师', tags: ['冠心病', '高血压'], online: true },
+                        { id: 2, name: '李秀华', department: '呼吸内科', avatar: 'img/doctor-female-doc.jpg', title: '副主任医师', tags: ['哮喘'], online: false },
+                        { id: 3, name: '王建国', department: '消化内科', avatar: 'img/doctor-male-doc.jpg', title: '主任医师', tags: ['胃肠疾病'], online: true },
+                        { id: 4, name: '陈美玲', department: '肾内科', avatar: 'img/doctor-female-doc.jpg', title: '主治医师', tags: ['肾病'], online: true },
+                        { id: 5, name: '张伟民', department: '内分泌科', avatar: 'img/doctor-male-doc.jpg', title: '主任医师', tags: ['糖尿病'], online: false },
+                        { id: 6, name: '刘芳华', department: '血液科', avatar: 'img/doctor-female-doc.jpg', title: '副主任医师', tags: ['血液病'], online: false },
+                        { id: 7, name: '赵强', department: '普外科', avatar: 'img/doctor-male-doc.jpg', title: '主任医师', tags: ['腹部外科'], online: true },
+                        { id: 8, name: '孙丽华', department: '骨科', avatar: 'img/doctor-female-doc.jpg', title: '副主任医师', tags: ['关节置换'], online: true }
+                    ];
+                    // 疾病数据
+                    this.diseases = [
+                        { id: 1, name: '高血压', description: '高血压是指以体循环动脉血压（收缩压和/或舒张压）增高为主要特征，可伴有心、脑、肾等器官的功能或器质性损害的临床综合征。' },
+                        { id: 2, name: '糖尿病', description: '糖尿病是一组以高血糖为特征的代谢性疾病。高血糖则是由于胰岛素分泌缺陷或其生物作用受损，或两者兼有引起。' },
+                        { id: 3, name: '冠心病', description: '冠状动脉粥样硬化性心脏病是冠状动脉血管发生动脉粥样硬化病变而引起血管腔狭窄或阻塞，造成心肌缺血、缺氧或坏死而导致的心脏病。' },
+                        { id: 4, name: '哮喘', description: '哮喘是一种气道慢性炎症性疾病，由多种细胞和细胞组分参与，这种慢性炎症与气道高反应性相关，通常出现广泛而多变的可逆性气流受限。' },
+                        { id: 5, name: '胃溃疡', description: '胃溃疡是位于贲门至幽门之间的慢性溃疡，是消化性溃疡的一种。消化性溃疡可发生在胃、十二指肠，也可发生在食管下端、胃-空肠吻合口附近以及美克尔憩室内异位胃黏膜上。' },
+                        { id: 6, name: '肺炎', description: '肺炎是指终末气道、肺泡和肺间质的炎症，可由病原微生物、理化因素、免疫损伤、过敏及药物所致。' }
+                    ];
+                    // 文章数据
+                    this.articles = [
+                        { id: 1, title: '春季如何预防流感', summary: '春季是流感高发季节，如何有效预防流感成为大家关注的话题。本文将为您介绍一些实用的预防措施...', image: 'img/article1.jpg', category: '健康科普', createTime: '2024-03-15' },
+                        { id: 2, title: '高血压患者的日常护理', summary: '高血压是一种常见的慢性病，需要长期的日常护理和管理。本文将为您介绍高血压患者的日常护理要点...', image: 'img/article2.jpg', category: '疾病护理', createTime: '2024-03-12' },
+                        { id: 3, title: '糖尿病饮食指南', summary: '合理的饮食对于糖尿病患者的血糖控制至关重要。本文将为您介绍糖尿病患者的饮食原则和注意事项...', image: 'img/article3.jpg', category: '饮食健康', createTime: '2024-03-10' },
+                        { id: 4, title: '如何保持健康的生活方式', summary: '健康的生活方式是保持身体健康的基础。本文将从饮食、运动、睡眠等方面为您介绍如何养成健康的生活习惯...', image: 'img/article4.jpg', category: '健康科普', createTime: '2024-03-08' },
+                        { id: 5, title: '儿童疫苗接种指南', summary: '疫苗接种是保护儿童健康的重要措施。本文将为您介绍儿童疫苗接种的相关知识和注意事项...', image: 'img/article5.jpg', category: '儿童健康', createTime: '2024-03-05' },
+                        { id: 6, title: '老年人健康管理', summary: '随着年龄的增长，老年人的身体机能逐渐下降，需要特别的健康管理。本文将为您介绍老年人健康管理的要点...', image: 'img/article6.jpg', category: '老年健康', createTime: '2024-03-01' }
+                    ];
+                },
+                goToHospitalDetail(id) {
+                    window.location.href = 'hospital-detail.html?hospitalId=' + id;
+                },
+                goToDoctorDetail(id) {
+                    window.location.href = 'doctor-detail.html?id=' + id;
+                },
+                goToDiseaseDetail(id) {
+                    window.location.href = 'disease-detail.html?id=' + id;
+                },
+                goToArticleDetail(id) {
+                    window.location.href = 'article-detail.html?id=' + id;
+                }
+            },
+            mounted() {
+                this.keyword = decodeURIComponent(this.getUrlParam('keyword')) || '';
+                this.loadData();
+            }
+        });
+    </script>
+</body>
+</html>

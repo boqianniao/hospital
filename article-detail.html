@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>文章详情 - 健康之路在线医疗</title>
+    <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+        }
+        /* 顶部导航 */
+        .header {
+            background: linear-gradient(135deg, #1e88e5 0%, #42a5f5 100%);
+            box-shadow: 0 2px 10px rgba(30, 136, 229, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-content {
+            width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+        }
+        .header .logo {
+            display: flex;
+            align-items: center;
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .header .logo img {
+            width: 45px;
+            height: 45px;
+            border-radius: 8px;
+            margin-right: 10px;
+        }
+        .header .nav {
+            display: flex;
+            gap: 5px;
+        }
+        .header .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 18px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            font-size: 15px;
+        }
+        .header .nav a:hover, .header .nav a.active {
+            background-color: #1565c0;
+        }
+        .header .search-box {
+            display: flex;
+            align-items: center;
+        }
+        .header .search-box input {
+            width: 300px;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px 0 0 4px;
+            font-size: 14px;
+            outline: none;
+        }
+        .header .search-box input:focus {
+            outline: none;
+            box-shadow: none;
+        }
+        .header .search-box button {
+            padding: 8px 20px;
+            border: none;
+            background-color: #1565c0;
+            color: white;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .header .auth {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .header .auth .login-btn, .header .auth .register-btn, .header .auth .user-info {
+            color: white;
+            text-decoration: none;
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .header .auth .login-btn {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .header .auth .register-btn {
+            background-color: white;
+            color: #1e88e5;
+        }
+        .header .auth .user-info {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        /* 面包屑导航 */
+        .breadcrumb {
+            width: 1200px;
+            margin: 20px auto;
+            font-size: 14px;
+            color: #666;
+        }
+        .breadcrumb a {
+            color: #1e88e5;
+            text-decoration: none;
+        }
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        /* 内容区域 */
+        .content {
+            width: 1200px;
+            margin: 0 auto 30px;
+        }
+        /* 文章卡片 */
+        .article-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        /* 文章头部 */
+        .article-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 25px;
+            border-bottom: 2px solid #e3f2fd;
+        }
+        .article-header .category {
+            display: inline-block;
+            background-color: #e3f2fd;
+            color: #1e88e5;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+        .article-header h1 {
+            font-size: 26px;
+            color: #333;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        .article-header .meta {
+            color: #999;
+            font-size: 14px;
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+        }
+        .article-header .meta span {
+            display: flex;
+            align-items: center;
+        }
+        /* 封面图片 */
+        .article-cover {
+            width: 100%;
+            height: 350px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        /* 文章正文 */
+        .article-body {
+            font-size: 15px;
+            line-height: 1.9;
+            color: #333;
+        }
+        .article-body p {
+            margin-bottom: 18px;
+            text-indent: 2em;
+        }
+        .article-body h2 {
+            font-size: 20px;
+            color: #1e88e5;
+            margin: 30px 0 15px;
+            padding-left: 10px;
+            border-left: 4px solid #1e88e5;
+        }
+        .article-body h3 {
+            font-size: 17px;
+            color: #333;
+            margin: 25px 0 12px;
+        }
+        .article-body ul, .article-body ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        .article-body li {
+            margin-bottom: 10px;
+            line-height: 1.8;
+        }
+        .article-body .highlight-box {
+            background-color: #e3f2fd;
+            border-left: 4px solid #1e88e5;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .article-body .highlight-box p {
+            margin: 0;
+            text-indent: 0;
+        }
+        .article-body .tip-box {
+            background-color: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .article-body .tip-box p {
+            margin: 0;
+            text-indent: 0;
+        }
+        /* 配图 */
+        .article-body .image-inline {
+            display: block;
+            max-width: 100%;
+            margin: 20px auto;
+            border-radius: 8px;
+        }
+        .article-body .image-caption {
+            text-align: center;
+            color: #999;
+            font-size: 13px;
+            margin-top: -15px;
+            margin-bottom: 20px;
+        }
+        /* 文章底部 */
+        .article-footer {
+            margin-top: 40px;
+            padding-top: 25px;
+            border-top: 2px solid #e3f2fd;
+        }
+        .article-footer .tags {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .article-footer .tag {
+            background-color: #f5f7fa;
+            color: #666;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .article-footer .share {
+            margin-top: 20px;
+            color: #999;
+            font-size: 14px;
+        }
+        /* 相关推荐 */
+        .related-articles {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-top: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .related-articles h3 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e3f2fd;
+        }
+        .related-list {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .related-item {
+            display: flex;
+            gap: 12px;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .related-item:hover {
+            background-color: #f5f7fa;
+        }
+        .related-item img {
+            width: 80px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .related-item .info h4 {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.4;
+            margin-bottom: 5px;
+        }
+        .related-item .info span {
+            font-size: 12px;
+            color: #999;
+        }
+        /* 返回按钮 */
+        .back-btn {
+            display: inline-block;
+            padding: 10px 25px;
+            background-color: #1e88e5;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-top: 30px;
+            transition: background-color 0.3s;
+        }
+        .back-btn:hover {
+            background-color: #1565c0;
+        }
+        /* 页脚 */
+        .footer {
+            background-color: #1e88e5;
+            color: white;
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+        .footer-content {
+            width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        .footer-section h4 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #bbdefb;
+        }
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+        .footer-section ul li a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+        .footer-section ul li a:hover {
+            color: white;
+        }
+        .copyright {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+        }
+        /* 未找到提示 */
+        .not-found {
+            text-align: center;
+            padding: 80px 0;
+            color: #999;
+        }
+        .not-found p {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+    </style>
+    <script src="component/Header.vue.js"></script>
+    <script src="component/Footer.vue.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航 -->
+        <header-component :active-nav="'article'"></header-component>
+
+        <!-- 面包屑导航 -->
+        <div class="breadcrumb">
+            <a href="index.html">首页</a> > 
+            <a href="article.html">健康科普</a> > 
+            <span>{{ article.title || '文章详情' }}</span>
+        </div>
+
+        <!-- 内容区域 -->
+        <div v-if="article" class="content">
+            <div class="article-card">
+                <!-- 文章头部 -->
+                <div class="article-header">
+                    <span class="category">{{ article.category }} - {{ article.subCategory }}</span>
+                    <h1>{{ article.title }}</h1>
+                    <div class="meta">
+                        <span>发布时间：{{ article.date }}</span>
+                        <span>作者：{{ article.author }}</span>
+                        <span>阅读量：{{ article.views }}</span>
+                    </div>
+                </div>
+
+                <!-- 封面图片 -->
+                <img :src="article.image" :alt="article.title" class="article-cover">
+
+                <!-- 文章正文 -->
+                <div class="article-body" v-html="article.content"></div>
+
+                <!-- 文章底部 -->
+                <div class="article-footer">
+                    <div class="tags">
+                        <span class="tag">{{ article.category }}</span>
+                        <span class="tag">{{ article.subCategory }}</span>
+                        <span class="tag">健康科普</span>
+                    </div>
+                    <div class="share">
+                        分享到：
+                    </div>
+                    <a href="article.html" class="back-btn">返回文章列表</a>
+                </div>
+            </div>
+
+            <!-- 相关推荐 -->
+            <div class="related-articles">
+                <h3>相关推荐</h3>
+                <div class="related-list">
+                    <div v-for="related in relatedArticles" :key="related.id" class="related-item" @click="goToDetail(related.id)">
+                        <img :src="related.image" :alt="related.title">
+                        <div class="info">
+                            <h4>{{ related.title }}</h4>
+                            <span>{{ related.date }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 未找到文章 -->
+        <div v-else class="content not-found">
+            <p>未找到该文章</p>
+            <a href="article.html" class="back-btn">返回文章列表</a>
+        </div>
+
+        <!-- 页脚 -->
+        <footer-component></footer-component>
+    </div>
+
+    <script>
+        // Header和Footer组件已经在外部引入
+
+        // 主应用
+        new Vue({
+            el: '#app',
+            data: {
+                articleId: null,
+                article: null,
+                // 文章数据
+                articles: [
+                    { 
+                        id: 1, 
+                        title: '春季养生指南：如何预防春季常见病', 
+                        summary: '春季是万物复苏的季节，但也是各种疾病的高发期。本文为您介绍春季养生的要点和常见病的预防方法。', 
+                        category: '养生保健', 
+                        subCategory: '春季养生', 
+                        date: '2024-03-15', 
+                        image: 'img/health_01.jpeg', 
+                        views: 2356,
+                        author: '健康顾问',
+                        content: `
+                            <p>春季是万物复苏的季节，也是人体生理机能、新陈代谢最活跃的时期。然而，春季天气多变，乍暖还寒，也是各种疾病的高发期。为了帮助大家健康度过春天，本文为您详细介绍春季养生的要点。</p>
+                            
+                            <h2>一、春季养生原则</h2>
+                            <p>春季养生应顺应自然界"生发"的特点，在精神、饮食、起居等方面都要注意养"生"。</p>
+                            <h3>1. 精神调养</h3>
+                            <p>春季肝气旺盛，容易出现情绪波动。要保持心情舒畅，避免暴怒和忧郁。可以多参加户外活动，呼吸新鲜空气，有助于疏肝解郁。</p>
+                            <h3>2. 饮食调养</h3>
+                            <p>春季饮食应以清淡为主，少酸多甘。可以适当多吃一些时令蔬菜和水果，如菠菜、春笋、草莓等。同时要注意补充水分。</p>
+                            <h3>3. 起居调养</h3>
+                            <p>春季应早睡早起，保证充足的睡眠。天气晴好时要多开窗通风，保持室内空气新鲜。</p>
+                            
+                            <div class="highlight-box">
+                                <p><strong>温馨提示：</strong>春季气温变化大，早晚温差较大，要根据天气及时增减衣物，避免受凉感冒。</p>
+                            </div>
+                            
+                            <h2>二、春季常见病的预防</h2>
+                            <h3>1. 感冒和流感</h3>
+                            <p>春季是感冒和流感的高发季节。要注意以下几点预防措施：</p>
+                            <ul>
+                                <li>勤洗手，保持个人卫生</li>
+                                <li>避免前往人群密集的场所</li>
+                                <li>保持室内空气流通</li>
+                                <li>适当锻炼，增强体质</li>
+                                <li>必要时接种流感疫苗</li>
+                            </ul>
+                            
+                            <h3>2. 过敏性疾病</h3>
+                            <p>春季花粉增多，容易引起过敏性鼻炎、哮喘等疾病。有过敏史的人要注意：</p>
+                            <ul>
+                                <li>避免接触花粉等过敏原</li>
+                                <li>外出时佩戴口罩</li>
+                                <li>随身携带抗过敏药物</li>
+                                <li>如有症状及时就医</li>
+                            </ul>
+                            
+                            <div class="tip-box">
+                                <p><strong>小贴士：</strong>每天用淡盐水清洗鼻腔，可以有效预防过敏性鼻炎。</p>
+                            </div>
+                            
+                            <h3>3. 消化系统疾病</h3>
+                            <p>春季气温适宜细菌繁殖，容易引发胃肠道疾病。要注意饮食卫生，不吃生冷不洁的食物。</p>
+                            
+                            <h2>三、春季养生食谱推荐</h2>
+                            <h3>1. 红枣枸杞粥</h3>
+                            <p>材料：红枣10颗，枸杞15克，粳米100克</p>
+                            <p>做法：将红枣、枸杞洗净，与粳米一同煮粥即可。</p>
+                            <p>功效：补气养血，健脾养胃。</p>
+                            
+                            <h3>2. 菠菜猪肝汤</h3>
+                            <p>材料：菠菜200克，猪肝100克</p>
+                            <p>做法：猪肝切片焯水，菠菜洗净切段，一同煮汤。</p>
+                            <p>功效：补血明目，预防贫血。</p>
+                            
+                            <h2>四、春季运动建议</h2>
+                            <p>春季适合进行一些舒缓的运动，如散步、慢跑、太极拳、瑜伽等。运动时间最好选择在早晨或傍晚，避免在烈日下运动。</p>
+                            <p>运动强度要适中，以微微出汗为宜，不要过度劳累。</p>
+                            
+                            <h2>总结</h2>
+                            <p>春季养生重在"养阳防风"，要注意调节情志、合理饮食、适当运动。只要做好这些方面，就能有效预防春季常见病，健康快乐地度过美好的春天。</p>
+                        `
+                    },
+                    { 
+                        id: 2, 
+                        title: '高血压患者的日常饮食注意事项', 
+                        summary: '高血压是一种常见的慢性病，合理的饮食对于控制血压至关重要。', 
+                        category: '疾病防治', 
+                        subCategory: '心血管疾病', 
+                        date: '2024-03-14', 
+                        image: 'img/health_02.jpeg', 
+                        views: 1890,
+                        author: '心内科专家',
+                        content: `
+                            <p>高血压是一种常见的慢性疾病，严重威胁着人们的健康。除了药物治疗外，合理的饮食调理对于控制血压同样重要。本文为您详细介绍高血压患者的饮食注意事项。</p>
+                            
+                            <h2>一、饮食原则</h2>
+                            <h3>1. 限制钠盐摄入</h3>
+                            <p>钠盐是导致血压升高的重要因素。高血压患者每日食盐摄入量应控制在6克以下。尽量减少酱油、味精等调味品的使用，少吃腌制食品。</p>
+                            
+                            <h3>2. 增加钾的摄入</h3>
+                            <p>钾可以促进钠的排泄，有助于降低血压。建议多吃富含钾的食物，如香蕉、橙子、土豆、菠菜等。</p>
+                            
+                            <div class="highlight-box">
+                                <p><strong>温馨提示：</strong>肾功能不全的患者补钾需谨慎，请在医生指导下进行。</p>
+                            </div>
+                            
+                            <h3>3. 控制脂肪摄入</h3>
+                            <p>减少动物脂肪的摄入，如肥肉、动物内脏等。烹调时宜选用植物油，如橄榄油、菜籽油等。</p>
+                            
+                            <h2>二、推荐食物</h2>
+                            <ul>
+                                <li><strong>蔬菜水果：</strong>芹菜、菠菜、西红柿、黄瓜、苹果、猕猴桃等</li>
+                                <li><strong>优质蛋白：</strong>鱼肉、虾、瘦肉、豆制品、鸡蛋等</li>
+                                <li><strong>粗粮杂粮：</strong>燕麦、荞麦、玉米、红薯等</li>
+                                <li><strong>坚果类：</strong>核桃、杏仁、榛子等（适量食用）</li>
+                            </ul>
+                            
+                            <h2>三、应避免的食物</h2>
+                            <ul>
+                                <li>腌制食品：如咸菜、腊肉、咸鱼等</li>
+                                <li>高盐调味品：酱油、味精、蚝油等</li>
+                                <li>加工食品：方便面、薯片等</li>
+                                <li>刺激性食物：浓茶、咖啡、辣椒等</li>
+                                <li>酒精饮料</li>
+                            </ul>
+                            
+                            <div class="tip-box">
+                                <p><strong>小贴士：</strong>购买食品时养成看营养成分表的习惯，关注钠含量。</p>
+                            </div>
+                            
+                            <h2>四、饮食习惯建议</h2>
+                            <h3>1. 定时定量</h3>
+                            <p>养成规律的饮食习惯，不要暴饮暴食。每餐以七八分饱为宜。</p>
+                            
+                            <h3>2. 细嚼慢咽</h3>
+                            <p>吃饭时细嚼慢咽，有助于消化吸收，也能避免过量进食。</p>
+                            
+                            <h3>3. 戒烟限酒</h3>
+                            <p>吸烟会导致血压升高，饮酒也会影响降压药的效果。建议高血压患者戒烟限酒。</p>
+                            
+                            <h2>五、食谱示例</h2>
+                            <h3>早餐</h3>
+                            <p>燕麦粥1碗 + 煮鸡蛋1个 + 凉拌菠菜1碟 + 低脂牛奶1杯</p>
+                            
+                            <h3>午餐</h3>
+                            <p>糙米饭1碗 + 清蒸鱼1份 + 蒜蓉西兰花1份 + 番茄蛋汤1碗</p>
+                            
+                            <h3>晚餐</h3>
+                            <p>杂粮馒头1个 + 芹菜炒肉丝1份 + 紫菜蛋花汤1碗 + 水果1份</p>
+                            
+                            <h2>总结</h2>
+                            <p>高血压的饮食调理是一个长期的过程，需要患者持之以恒。通过合理的饮食配合药物治疗和生活方式干预，大多数高血压患者的血压都能得到良好控制。</p>
+                        `
+                    },
+                    { 
+                        id: 3, 
+                        title: '儿童疫苗接种全攻略', 
+                        summary: '疫苗接种是保护儿童健康的重要手段。', 
+                        category: '育儿知识', 
+                        subCategory: '疫苗接种', 
+                        date: '2024-03-13', 
+                        image: 'img/health_03.jpeg', 
+                        views: 3201,
+                        author: '儿科医生',
+                        content: `
+                            <p>疫苗接种是预防传染病最经济、最有效的手段。作为家长，了解儿童疫苗接种的相关知识对保护孩子健康至关重要。本文为您详细介绍儿童疫苗接种的时间表和注意事项。</p>
+                            
+                            <h2>一、疫苗分类</h2>
+                            <h3>1. 一类疫苗（免费疫苗）</h3>
+                            <p>国家免疫规划疫苗，由政府免费向公民提供，包括乙肝疫苗、卡介苗、脊灰疫苗、百白破疫苗等。</p>
+                            
+                            <h3>2. 二类疫苗（自费疫苗）</h3>
+                            <p>公民自愿自费接种的疫苗，如流感疫苗、水痘疫苗、肺炎疫苗等。虽然需要自费，但对儿童健康保护同样重要。</p>
+                            
+                            <div class="highlight-box">
+                                <p><strong>温馨提示：</strong>二类疫苗是对一类疫苗的重要补充，有条件的家庭建议尽量接种。</p>
+                            </div>
+                            
+                            <h2>二、疫苗接种时间表</h2>
+                            <h3>出生时</h3>
+                            <ul>
+                                <li>乙肝疫苗（第1剂）</li>
+                                <li>卡介苗</li>
+                            </ul>
+                            
+                            <h3>1月龄</h3>
+                            <ul>
+                                <li>乙肝疫苗（第2剂）</li>
+                            </ul>
+                            
+                            <h3>2月龄</h3>
+                            <ul>
+                                <li>脊灰疫苗（第1剂）</li>
+                            </ul>
+                            
+                            <h3>3月龄</h3>
+                            <ul>
+                                <li>脊灰疫苗（第2剂）</li>
+                                <li>百白破疫苗（第1剂）</li>
+                            </ul>
+                            
+                            <h3>6月龄</h3>
+                            <ul>
+                                <li>乙肝疫苗（第3剂）</li>
+                                <li>A群流脑疫苗（第1剂）</li>
+                            </ul>
+                            
+                            <h2>三、接种注意事项</h2>
+                            <h3>1. 接种前</h3>
+                            <ul>
+                                <li>观察儿童健康状况，如有发热、腹泻等症状应暂缓接种</li>
+                                <li>如实告知医生儿童过敏史和既往病史</li>
+                                <li>为儿童穿上方便穿脱的衣服</li>
+                            </ul>
+                            
+                            <h3>2. 接种后</h3>
+                            <ul>
+                                <li>在接种场所观察30分钟，无不良反应后再离开</li>
+                                <li>保持接种部位清洁干燥</li>
+                                <li>适当休息，多喝水</li>
+                                <li>如出现发热、局部红肿等反应，一般在1-2天内自行缓解</li>
+                            </ul>
+                            
+                            <div class="tip-box">
+                                <p><strong>小贴士：</strong>接种疫苗后发热是常见反应，体温不超过38.5℃时无需特殊处理，超过38.5℃可服用退热药。</p>
+                            </div>
+                            
+                            <h2>四、常见问题解答</h2>
+                            <h3>Q：疫苗可以提前或推迟接种吗？</h3>
+                            <p>A：疫苗最好按照规定时间接种。如有特殊情况需要推迟，推迟时间不宜过长。提前接种可能影响免疫效果。</p>
+                            
+                            <h3>Q：打完疫苗可以洗澡吗？</h3>
+                            <p>A：接种当天建议不要洗澡，以免接种部位沾水感染。如天气炎热，可在接种24小时后再洗。</p>
+                            
+                            <h3>Q：漏种的疫苗需要补种吗？</h3>
+                            <p>A：需要。漏种的疫苗应及时补种，以获得更好的保护。</p>
+                            
+                            <h2>五、自费疫苗推荐</h2>
+                            <ul>
+                                <li><strong>流感疫苗：</strong>6月龄以上儿童每年接种</li>
+                                <li><strong>水痘疫苗：</strong>1岁以上接种</li>
+                                <li><strong>肺炎疫苗：</strong>2月龄以上接种</li>
+                                <li><strong>手足口病疫苗：</strong>6月龄以上接种</li>
+                            </ul>
+                            
+                            <h2>总结</h2>
+                            <p>及时接种疫苗是保护儿童健康的重要措施。家长应该重视疫苗接种，按照免疫程序及时带孩子接种，为孩子筑起健康的保护屏障。</p>
+                        `
+                    },
+                    { 
+                        id: 4, 
+                        title: '上班族如何预防颈椎病', 
+                        summary: '长时间坐在电脑前工作的上班族，颈椎健康问题日益突出。', 
+                        category: '职场健康', 
+                        subCategory: '颈椎保健', 
+                        date: '2024-03-12', 
+                        image: 'img/health_01.jpeg', 
+                        views: 4521,
+                        author: '骨科专家',
+                        content: `
+                            <p>随着电脑和手机的普及，颈椎病的发病率逐年上升，且呈年轻化趋势。长期伏案工作的上班族更是颈椎病的高发人群。本文为您介绍简单有效的颈椎保健方法。</p>
+                            
+                            <h2>一、认识颈椎病</h2>
+                            <p>颈椎病是由于颈椎间盘退变、骨质增生等压迫或刺激神经根、脊髓、血管等组织引起的综合征。常见症状包括颈部疼痛、头晕、手臂麻木等。</p>
+                            
+                            <h2>二、预防措施</h2>
+                            <h3>1. 保持正确姿势</h3>
+                            <p>工作时，电脑屏幕应与眼睛保持同一水平线，视线平视或略微向下。桌椅高度要适宜，保持背部挺直。</p>
+                            
+                            <div class="highlight-box">
+                                <p><strong>建议：</strong>每工作45-60分钟，起来活动5-10分钟，做一些伸展运动。</p>
+                            </div>
+                            
+                            <h3>2. 选择合适的枕头</h3>
+                            <p>枕头高度以8-15厘米为宜，仰卧时枕头高度与拳头相当，侧卧时与肩宽相当。枕芯宜选择透气性好、软硬适中的材质。</p>
+                            
+                            <h3>3. 注意保暖</h3>
+                            <p>颈椎怕冷，受凉会导致肌肉紧张、血液循环不良。冬季要注意颈部保暖，夏季避免空调直吹。</p>
+                            
+                            <h2>三、颈椎保健操</h2>
+                            <h3>1. 颈部米字操</h3>
+                            <p>用头写"米"字，每个方向停留3-5秒，重复5-10次。可舒缓颈部肌肉紧张。</p>
+                            
+                            <h3>2. 耸肩运动</h3>
+                            <p>双肩用力向上耸起，保持3-5秒，然后放松。重复10-15次。</p>
+                            
+                            <h3>3. 转头运动</h3>
+                            <p>缓慢向左右转头，尽量到最大幅度，各保持5秒，重复5次。</p>
+                            
+                            <div class="tip-box">
+                                <p><strong>小贴士：</strong>做颈椎操时动作要缓慢轻柔，不要用力过猛，以免造成损伤。</p>
+                            </div>
+                            
+                            <h2>四、工作环境优化</h2>
+                            <ul>
+                                <li>电脑屏幕高度：屏幕中心与眼睛平视</li>
+                                <li>键盘高度：手臂自然下垂，手腕平放</li>
+                                <li>鼠标位置：靠近身体，不要伸太远</li>
+                                <li>使用耳机接听电话，减少颈椎歪斜</li>
+                            </ul>
+                            
+                            <h2>五、饮食调理</h2>
+                            <p>适当补充富含钙、蛋白质、维生素的食物，如牛奶、鸡蛋、鱼虾、新鲜蔬菜水果等，有助于骨骼健康。</p>
+                            
+                            <h2>总结</h2>
+                            <p>颈椎病重在预防，养成良好的工作和生活习惯是关键。只要坚持正确姿势、适当运动、注意保暖，就能有效预防颈椎病，拥有健康的颈椎。</p>
+                        `
+                    },
+                    { 
+                        id: 5, 
+                        title: '夏季清热解毒食谱推荐', 
+                        summary: '炎炎夏日，容易上火中暑。本文为您推荐几款清热解毒的健康食谱。', 
+                        category: '营养饮食', 
+                        subCategory: '健康食谱', 
+                        date: '2024-03-11', 
+                        image: 'img/health_02.jpeg', 
+                        views: 1567,
+                        author: '营养师',
+                        content: `
+                            <p>夏季天气炎热，人体容易上火、中暑。合理的饮食可以帮助我们清热解毒、消暑降温。本文为您推荐几款适合夏季的健康食谱。</p>
+                            
+                            <h2>一、推荐食谱</h2>
+                            <h3>1. 绿豆百合汤</h3>
+                            <p><strong>材料：</strong>绿豆100克，百合30克，冰糖适量</p>
+                            <p><strong>做法：</strong>绿豆洗净浸泡2小时，与百合一同煮至软烂，加入冰糖调味即可。</p>
+                            <p><strong>功效：</strong>清热解毒，养心安神。</p>
+                            
+                            <h3>2. 苦瓜排骨汤</h3>
+                            <p><strong>材料：</strong>苦瓜1根，排骨300克，姜片适量</p>
+                            <p><strong>做法：</strong>排骨焯水，苦瓜切块，一同放入锅中炖煮1.5小时。</p>
+                            <p><strong>功效：</strong>清热泻火，益气止渴。</p>
+                            
+                            <h3>3. 冬瓜薏米汤</h3>
+                            <p><strong>材料：</strong>冬瓜500克，薏米50克，瘦肉100克</p>
+                            <p><strong>做法：</strong>薏米提前浸泡，冬瓜去皮切块，一同煮汤。</p>
+                            <p><strong>功效：</strong>利水消肿，清热解暑。</p>
+                            
+                            <div class="highlight-box">
+                                <p><strong>温馨提示：</strong>绿豆性凉，体质虚寒、孕妇及经期女性不宜多食。</p>
+                            </div>
+                            
+                            <h2>二、夏季饮食原则</h2>
+                            <ul>
+                                <li>饮食宜清淡，少吃油腻、辛辣食物</li>
+                                <li>多吃新鲜蔬菜水果，补充维生素</li>
+                                <li>多喝白开水或淡盐水</li>
+                                <li>少吃冷饮冰品，以免伤脾胃</li>
+                                <li>食物要新鲜，防止食物中毒</li>
+                            </ul>
+                            
+                            <h2>三、清热食物推荐</h2>
+                            <ul>
+                                <li><strong>蔬菜类：</strong>苦瓜、冬瓜、丝瓜、黄瓜、西红柿</li>
+                                <li><strong>水果类：</strong>西瓜、梨、桃子、葡萄</li>
+                                <li><strong>饮品类：</strong>绿豆汤、酸梅汤、菊花茶</li>
+                            </ul>
+                            
+                            <div class="tip-box">
+                                <p><strong>小贴士：</strong>夏季早餐适宜喝一碗温热的绿豆粥或薏米粥，既能补充能量，又能清热解毒。</p>
+                            </div>
+                            
+                            <h2>四、食谱搭配建议</h2>
+                            <p><strong>早餐：</strong>小米粥 + 凉拌黄瓜 + 煮鸡蛋</p>
+                            <p><strong>午餐：</strong>清蒸鱼 + 蒜蓉西兰花 + 冬瓜汤 + 米饭</p>
+                            <p><strong>晚餐：</strong>绿豆百合汤 + 凉面 + 凉拌西红柿</p>
+                            
+                            <h2>总结</h2>
+                            <p>夏季饮食应以清热解暑为主，合理搭配食物，既能消暑降温，又能补充营养。只要遵循以上饮食原则，就能健康舒适地度过炎炎夏日。</p>
+                        `
+                    },
+                    { 
+                        id: 6, 
+                        title: '如何改善睡眠质量', 
+                        summary: '睡眠质量直接影响身体健康和工作效率。', 
+                        category: '心理健康', 
+                        subCategory: '睡眠质量', 
+                        date: '2024-03-10', 
+                        image: 'img/health_03.jpeg', 
+                        views: 2876,
+                        author: '心理医生',
+                        content: `
+                            <p>人的一生中有三分之一的时间在睡眠中度过，良好的睡眠对健康至关重要。然而，现代人由于生活压力大、电子设备普及等因素，睡眠问题日益普遍。本文介绍几种科学改善睡眠的方法。</p>
+                            
+                            <h2>一、睡眠的重要性</h2>
+                            <p>充足的睡眠可以：</p>
+                            <ul>
+                                <li>恢复体力，消除疲劳</li>
+                                <li>增强免疫力</li>
+                                <li>促进生长发育</li>
+                                <li>巩固记忆</li>
+                                <li>调节情绪</li>
+                            </ul>
+                            
+                            <h2>二、改善睡眠的方法</h2>
+                            <h3>1. 养成规律作息</h3>
+                            <p>每天固定时间睡觉和起床，周末也不例外。养成规律的作息习惯，有助于调整生物钟。</p>
+                            
+                            <div class="highlight-box">
+                                <p><strong>建议：</strong>成人每天应保证7-9小时的睡眠时间。</p>
+                            </div>
+                            
+                            <h3>2. 创造舒适的睡眠环境</h3>
+                            <ul>
+                                <li>保持卧室安静、光线昏暗</li>
+                                <li>室温控制在20-24℃</li>
+                                <li>选择舒适的床垫和枕头</li>
+                                <li>保持卧室清洁、通风</li>
+                            </ul>
+                            
+                            <h3>3. 睡前放松</h3>
+                            <p>睡前1小时避免使用电子设备，可以看书、听轻音乐、做瑜伽或冥想，让身心逐渐放松下来。</p>
+                            
+                            <h3>4. 注意饮食</h3>
+                            <ul>
+                                <li>睡前避免饮用咖啡、浓茶</li>
+                                <li>晚餐不宜过晚、过饱</li>
+                                <li>睡前可喝一杯温牛奶</li>
+                                <li>避免睡前饮酒</li>
+                            </ul>
+                            
+                            <div class="tip-box">
+                                <p><strong>小贴士：</strong>如果躺在床上超过20分钟还睡不着，可以起床做一些放松的活动，等有睡意再回到床上。</p>
+                            </div>
+                            
+                            <h2>三、助眠食物推荐</h2>
+                            <ul>
+                                <li><strong>温牛奶：</strong>含有色氨酸，有助于睡眠</li>
+                                <li><strong>香蕉：</strong>富含镁和钾，可放松肌肉</li>
+                                <li><strong>坚果：</strong>含有褪黑素</li>
+                                <li><strong>蜂蜜：</strong>可促进色氨酸发挥作用</li>
+                            </ul>
+                            
+                            <h2>四、改善睡眠的简单运动</h2>
+                            <h3>1. 深呼吸练习</h3>
+                            <p>平躺在床上，慢慢吸气4秒，屏住呼吸4秒，然后慢慢呼气6秒。重复5-10次。</p>
+                            
+                            <h3>2. 渐进性肌肉放松</h3>
+                            <p>从脚开始，先紧张肌肉5秒，然后放松10秒，逐渐向上到头部。</p>
+                            
+                            <h3>3. 轻柔伸展</h3>
+                            <p>做一些轻柔的伸展动作，放松紧张的肌肉。</p>
+                            
+                            <h2>五、什么时候需要就医</h2>
+                            <p>如果长期存在以下问题，建议及时就医：</p>
+                            <ul>
+                                <li>持续失眠超过一个月</li>
+                                <li>白天严重嗜睡</li>
+                                <li>睡眠时打鼾严重或呼吸暂停</li>
+                                <li>睡眠时腿部不适或抽动</li>
+                            </ul>
+                            
+                            <h2>总结</h2>
+                            <p>改善睡眠需要从多方面入手，养成良好的睡眠习惯是关键。只要坚持正确的方法，相信您一定能够拥有优质的睡眠。</p>
+                        `
+                    },
+                    { id: 7, title: '糖尿病患者饮食指南', summary: '糖尿病患者的饮食原则和注意事项。', category: '疾病防治', subCategory: '内分泌疾病', date: '2024-03-09', image: 'img/health_01.jpeg', views: 1987, author: '内分泌科专家', content: '<p>糖尿病是一种常见的慢性代谢性疾病，饮食控制是糖尿病治疗的基础。本文详细介绍糖尿病患者的饮食原则。</p>' },
+                    { id: 8, title: '宝宝辅食添加的最佳时机', summary: '辅食添加是宝宝成长过程中的重要阶段。', category: '育儿知识', subCategory: '辅食添加', date: '2024-03-08', image: 'img/health_02.jpeg', views: 2134, author: '育儿专家', content: '<p>辅食添加是宝宝从母乳喂养过渡到成人饮食的重要阶段。本文介绍宝宝辅食添加的最佳时机和方法。</p>' },
+                    { id: 9, title: '办公室视力保护小妙招', summary: '长时间盯着电脑屏幕，容易导致视力下降。', category: '职场健康', subCategory: '视力保护', date: '2024-03-07', image: 'img/health_03.jpeg', views: 1654, author: '眼科医生', content: '<p>现代人每天长时间使用电脑和手机，视力问题日益突出。本文分享几个简单有效的视力保护方法。</p>' },
+                    { id: 10, title: '秋冬季节如何预防感冒', summary: '秋冬季节是感冒的高发期。', category: '养生保健', subCategory: '秋季养生', date: '2024-03-06', image: 'img/health_01.jpeg', views: 3421, author: '健康顾问', content: '<p>秋冬季节天气转凉，是感冒的高发期。了解感冒的预防措施对保护自己和家人健康很重要。</p>' },
+                    { id: 11, title: '老年人冬季养生注意事项', summary: '冬季天气寒冷，老年人更容易出现健康问题。', category: '养生保健', subCategory: '冬季养生', date: '2024-03-05', image: 'img/health_02.jpeg', views: 2087, author: '老年病专家', content: '<p>冬季是老年人健康面临考验的季节。本文介绍老年人冬季养生的注意事项。</p>' },
+                    { id: 12, title: '如何识别和缓解焦虑情绪', summary: '焦虑已成为常见的心理问题。', category: '心理健康', subCategory: '情绪管理', date: '2024-03-04', image: 'img/health_03.jpeg', views: 2567, author: '心理医生', content: '<p>现代生活中，焦虑已成为常见的心理问题。了解焦虑的表现和应对方法，有助于保持心理健康。</p>' }
+                ]
+            },
+            computed: {
+                // 获取相关文章（相同分类的其他文章）
+                relatedArticles() {
+                    if (!this.article) return [];
+                    return this.articles
+                        .filter(a => a.id !== this.article.id && a.category === this.article.category)
+                        .slice(0, 3);
+                }
+            },
+            methods: {
+                // 获取URL参数
+                getUrlParam(name) {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    return urlParams.get(name);
+                },
+                // 加载文章
+                loadArticle() {
+                    const id = this.getUrlParam('id');
+                    if (id) {
+                        this.articleId = parseInt(id);
+                        this.article = this.articles.find(a => a.id === this.articleId);
+                    }
+                },
+                // 跳转详情
+                goToDetail(id) {
+                    window.location.href = 'article-detail.html?id=' + id;
+                }
+            },
+            mounted() {
+                this.loadArticle();
+            }
+        });
+    </script>
+</body>
+</html>

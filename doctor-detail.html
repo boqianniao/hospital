@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>医生详情 - 健康之路在线医疗</title>
+    <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+        }
+        /* 面包屑导航 */
+        .breadcrumb {
+            width: 1200px;
+            margin: 20px auto;
+            font-size: 14px;
+            color: #666;
+        }
+        .breadcrumb a {
+            color: #1e88e5;
+            text-decoration: none;
+        }
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        /* 内容区域 */
+        .content {
+            width: 1200px;
+            margin: 0 auto 30px;
+        }
+        /* 医生基本信息 */
+        .doctor-info {
+            background-color: white;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            gap: 30px;
+        }
+        .doctor-info .avatar {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #e3f2fd;
+            flex-shrink: 0;
+        }
+        .doctor-info .info {
+            flex: 1;
+        }
+        .doctor-info .name {
+            font-size: 26px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .doctor-info .title {
+            display: inline-block;
+            background-color: #e3f2fd;
+            color: #1e88e5;
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        .doctor-info .department {
+            color: #666;
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+        .doctor-info .hospital {
+            color: #666;
+            font-size: 15px;
+            margin-bottom: 15px;
+        }
+        .doctor-info .specialty {
+            margin-bottom: 15px;
+        }
+        .doctor-info .specialty-label {
+            color: #999;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .doctor-info .specialty-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .doctor-info .specialty-tags .tag {
+            background-color: #fff3e0;
+            color: #f57c00;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .doctor-info .introduction {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        .doctor-info .online-badge {
+            display: inline-block;
+            background-color: #4caf50;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        /* 关注按钮 */
+        .follow-btn {
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            outline: none;
+            margin-left: 15px;
+        }
+        .follow-btn.follow {
+            background-color: #1e88e5;
+            color: white;
+        }
+        .follow-btn.follow:hover {
+            background-color: #1565c0;
+        }
+        .follow-btn.followed {
+            background-color: #f5f7fa;
+            color: #999;
+            border: 1px solid #e8eef3;
+        }
+        /* 电话咨询 */
+        .phone-consult {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .phone-consult .icon {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+        }
+        .phone-consult .text {
+            flex: 1;
+        }
+        .phone-consult .title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .phone-consult .desc {
+            color: #999;
+            font-size: 13px;
+        }
+        .phone-consult .price {
+            text-align: right;
+        }
+        .phone-consult .price-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #f57c00;
+        }
+        .phone-consult .price-unit {
+            font-size: 14px;
+            color: #999;
+        }
+        .phone-consult .consult-btn {
+            padding: 12px 30px;
+            background-color: #1e88e5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .phone-consult .consult-btn:hover {
+            background-color: #1565c0;
+        }
+        /* 预约挂号 */
+        .appointment {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .appointment .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e3f2fd;
+        }
+        .appointment .days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 15px;
+        }
+        .appointment .day-item {
+            text-align: center;
+            padding: 15px 10px;
+            border-radius: 8px;
+            border: 1px solid #e8eef3;
+            transition: all 0.3s;
+        }
+        .appointment .day-item:hover {
+            border-color: #1e88e5;
+        }
+        .appointment .day-item .date {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .appointment .day-item .weekday {
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 6px;
+        }
+        .appointment .day-item .remain-count {
+            font-size: 12px;
+            color: #f57c00;
+            margin-bottom: 8px;
+        }
+        .appointment .day-item .status {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .appointment .day-item .available {
+            background-color: #1e88e5;
+            color: white;
+        }
+        .appointment .day-item .available:hover {
+            background-color: #1565c0;
+        }
+        .appointment .day-item .full {
+            background-color: #f5f5f5;
+            color: #999;
+            cursor: not-allowed;
+        }
+        /* 患者评价 */
+        .reviews {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .reviews .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e3f2fd;
+        }
+        .reviews .review-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .reviews .review-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .reviews .review-item:last-child {
+            border-bottom: none;
+        }
+        .reviews .review-item .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .reviews .review-item .patient-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: #333;
+        }
+        .reviews .review-item .time {
+            font-size: 13px;
+            color: #999;
+        }
+        .reviews .review-item .content {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .reviews .no-reviews {
+            text-align: center;
+            color: #999;
+            padding: 40px 0;
+        }
+        /* 返回按钮 */
+        .back-btn {
+            display: inline-block;
+            padding: 10px 25px;
+            background-color: #1e88e5;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        .back-btn:hover {
+            background-color: #1565c0;
+        }
+        /* 页脚 */
+        .footer {
+            background-color: #1e88e5;
+            color: white;
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+        .footer-content {
+            width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        .footer-section h4 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #bbdefb;
+        }
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+        .footer-section ul li a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+        .footer-section ul li a:hover {
+            color: white;
+        }
+        .copyright {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+        }
+        /* 未找到提示 */
+        .not-found {
+            text-align: center;
+            padding: 80px 0;
+            color: #999;
+        }
+        .not-found p {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+    </style>
+    <script src="component/Header.vue.js"></script>
+    <script src="component/Footer.vue.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航 -->
+        <header-component :active-nav="'doctor'"></header-component>
+
+        <!-- 面包屑导航 -->
+        <div class="breadcrumb">
+            <a href="index.html">首页</a> > 
+            <a href="doctor.html">找医生</a> > 
+            <span>{{ doctor.name || '医生详情' }}</span>
+        </div>
+
+        <!-- 内容区域 -->
+        <div v-if="doctor" class="content">
+            <!-- 医生基本信息 -->
+            <div class="doctor-info">
+                <img :src="doctor.avatar" :alt="doctor.name" class="avatar">
+                <div class="info">
+                    <div class="name">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span>{{ doctor.name }}</span>
+                            <span v-if="doctor.online" class="online-badge">在线</span>
+                        </div>
+                        <button 
+                            :class="['follow-btn', doctorFollowed ? 'followed' : 'follow']"
+                            @click="toggleDoctorFollow"
+                        >
+                            {{ doctorFollowed ? '已关注(' + doctorFollowCount + ')' : '关注' }}
+                        </button>
+                    </div>
+                    <span class="title">{{ doctor.title }}</span>
+                    <div class="department">所属科室：{{ doctor.department }}</div>
+                    <div class="hospital">所在医院：{{ doctor.hospital }}</div>
+                    <div class="specialty">
+                        <div class="specialty-label">擅长领域：</div>
+                        <div class="specialty-tags">
+                            <span v-for="tag in doctor.tags" :key="tag" class="tag">{{ tag }}</span>
+                        </div>
+                    </div>
+                    <div class="introduction">{{ doctor.introduction }}</div>
+                </div>
+            </div>
+
+            <!-- 电话咨询 -->
+            <div class="phone-consult">
+                <img src="img/dis-tel.png" alt="电话咨询" class="icon">
+                <div class="text">
+                    <div class="title">电话咨询</div>
+                    <div class="desc">专业医生一对一电话咨询服务</div>
+                </div>
+                <div class="price">
+                    <span class="price-value">¥{{ doctor.consultPrice }}</span>
+                    <span class="price-unit">/次</span>
+                </div>
+                <button class="consult-btn" @click="goToConsult">立即咨询</button>
+            </div>
+
+            <!-- 预约挂号 -->
+            <div class="appointment">
+                <div class="section-title">预约挂号</div>
+                <div class="days">
+                    <div v-for="day in appointmentDays" :key="day.date" class="day-item">
+                        <div class="date">{{ day.dateStr }}</div>
+                        <div class="weekday">{{ day.weekday }}</div>
+                        <div class="remain-count">剩余{{ day.remainCount }}个号源</div>
+                        <div 
+                            :class="['status', day.available ? 'available' : 'full']"
+                            @click="day.available && handleAppointment(day)"
+                        >
+                            {{ day.available ? '预约' : '已约满' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 患者评价 -->
+            <div class="reviews">
+                <div class="section-title">患者评价</div>
+                <div v-if="doctor.reviews && doctor.reviews.length > 0" class="review-list">
+                    <div v-for="review in doctor.reviews" :key="review.id" class="review-item">
+                        <div class="review-header">
+                            <span class="patient-name">{{ review.patientName }}</span>
+                            <span class="time">{{ review.time }}</span>
+                        </div>
+                        <div class="content">{{ review.content }}</div>
+                    </div>
+                </div>
+                <div v-else class="no-reviews">
+                    暂无患者评价
+                </div>
+            </div>
+
+            <a href="doctor.html" class="back-btn">返回医生列表</a>
+        </div>
+
+        <!-- 未找到医生 -->
+        <div v-else class="content not-found">
+            <p>未找到该医生信息</p>
+            <a href="doctor.html" class="back-btn">返回医生列表</a>
+        </div>
+
+        <!-- 页脚 -->
+        <footer-component></footer-component>
+    </div>
+
+    <script>
+        // Header和Footer组件已经在外部引入
+
+        // 主应用
+        new Vue({
+            el: '#app',
+            data: {
+                doctorId: null,
+                doctor: null,
+                // 关注状态
+                doctorFollowed: false,
+                doctorFollowCount: 0,
+                // 医生数据
+                doctors: [
+                    { 
+                        id: 1, 
+                        name: '张明远', 
+                        department: '心内科', 
+                        hospital: '北京协和医院', 
+                        avatar: 'img/doctor-male-doc.jpg', 
+                        title: '主任医师', 
+                        tags: ['擅长冠心病', '高血压', '心律失常', '心肌病'], 
+                        online: true, 
+                        departmentId: 11,
+                        consultPrice: 100,
+                        followCount: 2350,
+                        introduction: '张明远，主任医师，从事心血管内科临床工作30余年，擅长冠心病、高血压、心律失常、心肌病等心血管疾病的诊断和治疗。在冠心病介入治疗方面有丰富经验，累计完成冠脉造影及介入手术5000余例。发表学术论文50余篇，主持国家自然科学基金项目2项。',
+                        reviews: [
+                            { id: 1, patientName: '李**', rating: '★★★★★', content: '张医生非常专业，讲解很详细，让我对自己的病情有了清楚的认识。治疗方案也很合理，现在恢复得很好。', time: '2024-03-10' },
+                            { id: 2, patientName: '王**', rating: '★★★★★', content: '医术精湛，态度和蔼，很有耐心。问诊过程很仔细，不会敷衍了事，非常推荐！', time: '2024-03-08' },
+                            { id: 3, patientName: '赵**', rating: '★★★★☆', content: '医生很专业，就是号比较难挂，等了很久才看上。不过治疗效果确实不错。', time: '2024-03-05' }
+                        ]
+                    },
+                    { 
+                        id: 2, 
+                        name: '李晓华', 
+                        department: '妇科', 
+                        hospital: '上海瑞金医院', 
+                        avatar: 'img/doctor-female-doc.jpg', 
+                        title: '副主任医师', 
+                        tags: ['擅长妇科肿瘤', '宫颈疾病', '子宫肌瘤'], 
+                        online: true, 
+                        departmentId: 31,
+                        consultPrice: 80,
+                        followCount: 1860,
+                        introduction: '李晓华，副主任医师，从事妇科临床工作20余年，擅长妇科肿瘤、宫颈疾病、子宫肌瘤等妇科常见病和疑难病的诊治。在妇科微创手术方面有丰富经验，累计完成腹腔镜、宫腔镜手术3000余例。',
+                        reviews: [
+                            { id: 1, patientName: '张**', rating: '★★★★★', content: '李医生很温柔，检查很仔细，让我这个很紧张的人都放松了不少。', time: '2024-03-09' },
+                            { id: 2, patientName: '刘**', rating: '★★★★☆', content: '专业水平很高，手术很成功，恢复得也很快。', time: '2024-03-06' }
+                        ]
+                    },
+                    { 
+                        id: 3, 
+                        name: '王建国', 
+                        department: '骨科', 
+                        hospital: '广州中山医院', 
+                        avatar: 'img/doctor-male-doc.jpg', 
+                        title: '主任医师', 
+                        tags: ['关节置换', '骨折治疗', '运动损伤'], 
+                        online: false, 
+                        departmentId: 52,
+                        consultPrice: 120,
+                        followCount: 1520,
+                        introduction: '王建国，主任医师，从事骨科临床工作25年，擅长关节置换、骨折治疗、运动损伤等骨科疾病的诊治。在人工关节置换手术方面经验丰富，累计完成髋、膝关节置换手术2000余例。',
+                        reviews: [
+                            { id: 1, patientName: '陈**', rating: '★★★★★', content: '王医生给我做的膝关节置换手术非常成功，现在走路完全不疼了，感谢王医生！', time: '2024-03-07' }
+                        ]
+                    },
+                    { 
+                        id: 4, 
+                        name: '陈美玲', 
+                        department: '儿科', 
+                        hospital: '杭州浙一医院', 
+                        avatar: 'img/doctor-female-doc.jpg', 
+                        title: '主治医师', 
+                        tags: ['小儿呼吸', '小儿消化', '新生儿疾病'], 
+                        online: true, 
+                        departmentId: 41,
+                        consultPrice: 60,
+                        followCount: 3180,
+                        introduction: '陈美玲，主治医师，从事儿科临床工作15年，擅长小儿呼吸系统疾病、消化系统疾病及新生儿疾病的诊治。对儿童哮喘、肺炎等疾病有丰富治疗经验。',
+                        reviews: [
+                            { id: 1, patientName: '林**', rating: '★★★★★', content: '陈医生对孩子很有耐心，看病很仔细，开的药也很有效，宝宝很快就康复了。', time: '2024-03-11' },
+                            { id: 2, patientName: '吴**', rating: '★★★★★', content: '非常有爱心的医生，对小朋友特别温柔，推荐！', time: '2024-03-09' }
+                        ]
+                    },
+                    { 
+                        id: 5, 
+                        name: '刘志强', 
+                        department: '神经内科', 
+                        hospital: '北京协和医院', 
+                        avatar: 'img/doctor-male-doc.jpg', 
+                        title: '主任医师', 
+                        tags: ['脑血管疾病', '帕金森病', '癫痫'], 
+                        online: false, 
+                        departmentId: 61,
+                        consultPrice: 150,
+                        followCount: 1940,
+                        introduction: '刘志强，主任医师，从事神经内科临床工作28年，擅长脑血管疾病、帕金森病、癫痫等神经系统疾病的诊治。在脑卒中急救和康复治疗方面有丰富经验。',
+                        reviews: []
+                    },
+                    { 
+                        id: 6, 
+                        name: '赵雅琴', 
+                        department: '呼吸内科', 
+                        hospital: '上海瑞金医院', 
+                        avatar: 'img/doctor-female-doc.jpg', 
+                        title: '副主任医师', 
+                        tags: ['哮喘', '慢阻肺', '肺炎'], 
+                        online: true, 
+                        departmentId: 12,
+                        consultPrice: 90,
+                        followCount: 1680,
+                        introduction: '赵雅琴，副主任医师，从事呼吸内科临床工作18年，擅长哮喘、慢阻肺、肺炎等呼吸系统疾病的诊治。对慢性呼吸系统疾病的管理有丰富经验。',
+                        reviews: [
+                            { id: 1, patientName: '孙**', rating: '★★★★☆', content: '赵医生很专业，治疗方案很有效，现在哮喘控制得很好。', time: '2024-03-08' }
+                        ]
+                    },
+                    { 
+                        id: 7, 
+                        name: '孙伟东', 
+                        department: '消化内科', 
+                        hospital: '广州中山医院', 
+                        avatar: 'img/doctor-male-doc.jpg', 
+                        title: '主任医师', 
+                        tags: ['胃肠疾病', '肝胆疾病', '消化道肿瘤'], 
+                        online: true, 
+                        departmentId: 13,
+                        consultPrice: 100,
+                        followCount: 1450,
+                        introduction: '孙伟东，主任医师，从事消化内科临床工作22年，擅长胃肠疾病、肝胆疾病、消化道肿瘤等消化系统疾病的诊治。在消化道内镜诊疗方面有丰富经验。',
+                        reviews: [
+                            { id: 1, patientName: '周**', rating: '★★★★★', content: '孙医生做胃镜很熟练，过程很顺利，没什么不适感。', time: '2024-03-10' }
+                        ]
+                    },
+                    { 
+                        id: 8, 
+                        name: '周丽华', 
+                        department: '产科', 
+                        hospital: '杭州浙一医院', 
+                        avatar: 'img/doctor-female-doc.jpg', 
+                        title: '副主任医师', 
+                        tags: ['高危妊娠', '产前诊断', '孕期保健'], 
+                        online: false, 
+                        departmentId: 32,
+                        consultPrice: 80,
+                        followCount: 2070,
+                        introduction: '周丽华，副主任医师，从事产科临床工作16年，擅长高危妊娠、产前诊断、孕期保健等。对妊娠合并症和并发症的处理有丰富经验。',
+                        reviews: [
+                            { id: 1, patientName: '郑**', rating: '★★★★★', content: '周医生很负责，整个孕期检查都很仔细，生产过程也很顺利。', time: '2024-03-07' }
+                        ]
+                    },
+                    { 
+                        id: 9, 
+                        name: '吴明德', 
+                        department: '骨科', 
+                        hospital: '北京天坛医院', 
+                        avatar: 'img/doctor-male-doc.jpg', 
+                        title: '主任医师', 
+                        tags: ['脊柱外科', '颈椎病', '腰椎间盘突出'], 
+                        online: true, 
+                        departmentId: 53,
+                        consultPrice: 120,
+                        followCount: 1720,
+                        introduction: '吴明德，主任医师，从事骨科临床工作26年，擅长脊柱外科、颈椎病、腰椎间盘突出等疾病的诊治。在脊柱微创手术方面有丰富经验。',
+                        reviews: []
+                    },
+                    { 
+                        id: 10, 
+                        name: '郑雪梅', 
+                        department: '皮肤科', 
+                        hospital: '上海华山医院', 
+                        avatar: 'img/doctor-female-doc.jpg', 
+                        title: '主治医师', 
+                        tags: ['皮肤病', '湿疹', '银屑病'], 
+                        online: true, 
+                        departmentId: 71,
+                        consultPrice: 70,
+                        followCount: 1390,
+                        introduction: '郑雪梅，主治医师，从事皮肤科临床工作12年，擅长各种皮肤病、湿疹、银屑病等皮肤疾病的诊治。对过敏性皮肤病有丰富治疗经验。',
+                        reviews: [
+                            { id: 1, patientName: '黄**', rating: '★★★★☆', content: '郑医生开的药很有效，湿疹已经好多了。', time: '2024-03-09' }
+                        ]
+                    },
+                    { 
+                        id: 11, 
+                        name: '黄磊', 
+                        department: '眼科', 
+                        hospital: '广东省人民医院', 
+                        avatar: 'img/doctor-male-doc.jpg', 
+                        title: '主任医师', 
+                        tags: ['白内障', '青光眼', '眼底病'], 
+                        online: false, 
+                        departmentId: 81,
+                        consultPrice: 100,
+                        followCount: 1650,
+                        introduction: '黄磊，主任医师，从事眼科临床工作24年，擅长白内障、青光眼、眼底病等眼科疾病的诊治。在白内障手术方面有丰富经验。',
+                        reviews: []
+                    },
+                    { 
+                        id: 12, 
+                        name: '林静', 
+                        department: '耳鼻喉科', 
+                        hospital: '南京鼓楼医院', 
+                        avatar: 'img/doctor-female-doc.jpg', 
+                        title: '副主任医师', 
+                        tags: ['耳鼻喉疾病', '过敏性鼻炎', '中耳炎'], 
+                        online: true, 
+                        departmentId: 91,
+                        consultPrice: 80,
+                        followCount: 1280,
+                        introduction: '林静，副主任医师，从事耳鼻喉科临床工作17年，擅长耳鼻喉常见病、过敏性鼻炎、中耳炎等疾病的诊治。',
+                        reviews: [
+                            { id: 1, patientName: '许**', rating: '★★★★★', content: '林医生很专业，过敏性鼻炎治疗后症状明显改善。', time: '2024-03-08' }
+                        ]
+                    },
+                    { 
+                        id: 13, 
+                        name: '许文涛', 
+                        department: '口腔科', 
+                        hospital: '武汉同济医院', 
+                        avatar: 'img/doctor-male-doc.jpg', 
+                        title: '主任医师', 
+                        tags: ['口腔修复', '种植牙', '牙周病'], 
+                        online: false, 
+                        departmentId: 101,
+                        consultPrice: 90,
+                        followCount: 1150,
+                        introduction: '许文涛，主任医师，从事口腔科临床工作20年，擅长口腔修复、种植牙、牙周病等口腔疾病的诊治。',
+                        reviews: []
+                    },
+                    { 
+                        id: 14, 
+                        name: '马晓燕', 
+                        department: '内分泌科', 
+                        hospital: '成都华西医院', 
+                        avatar: 'img/doctor-female-doc.jpg', 
+                        title: '副主任医师', 
+                        tags: ['糖尿病', '甲状腺疾病', '肥胖症'], 
+                        online: true, 
+                        departmentId: 15,
+                        consultPrice: 90,
+                        followCount: 1820,
+                        introduction: '马晓燕，副主任医师，从事内分泌科临床工作15年，擅长糖尿病、甲状腺疾病、肥胖症等内分泌疾病的诊治。',
+                        reviews: [
+                            { id: 1, patientName: '何**', rating: '★★★★★', content: '马医生很耐心，糖尿病管理方案很详细，血糖控制得很好。', time: '2024-03-10' }
+                        ]
+                    },
+                    { 
+                        id: 15, 
+                        name: '何建军', 
+                        department: '神经外科', 
+                        hospital: '西安西京医院', 
+                        avatar: 'img/doctor-male-doc.jpg', 
+                        title: '主任医师', 
+                        tags: ['脑肿瘤', '脑血管病', '颅脑损伤'], 
+                        online: false, 
+                        departmentId: 62,
+                        consultPrice: 150,
+                        followCount: 1420,
+                        introduction: '何建军，主任医师，从事神经外科临床工作30年，擅长脑肿瘤、脑血管病、颅脑损伤等疾病的诊治。',
+                        reviews: []
+                    },
+                    { 
+                        id: 16, 
+                        name: '徐芳', 
+                        department: '肾内科', 
+                        hospital: '天津总医院', 
+                        avatar: 'img/doctor-female-doc.jpg', 
+                        title: '主治医师', 
+                        tags: ['肾病', '尿路感染', '血液透析'], 
+                        online: true, 
+                        departmentId: 14,
+                        consultPrice: 70,
+                        followCount: 980,
+                        introduction: '徐芳，主治医师，从事肾内科临床工作10年，擅长各种肾病、尿路感染、血液透析等肾脏疾病的诊治。',
+                        reviews: []
+                    }
+                ]
+            },
+            computed: {
+                // 预约日期（从今天开始7天）
+                appointmentDays() {
+                    const days = [];
+                    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+                    const today = new Date();
+                    
+                    for (let i = 0; i < 7; i++) {
+                        const date = new Date(today);
+                        date.setDate(today.getDate() + i);
+                        
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const weekday = weekdays[date.getDay()];
+                        
+                        // 随机生成是否有号（模拟数据）
+                        const available = Math.random() > 0.3;
+                        // 随机生成剩余号源数量
+                        const remainCount = Math.floor(Math.random() * 50) + 10;
+                        
+                        days.push({
+                            date: date.toISOString().split('T')[0],
+                            dateStr: `${year}-${month}-${day}`,
+                            weekday: weekday,
+                            remainCount: remainCount,
+                            available: available
+                        });
+                    }
+                    return days;
+                }
+            },
+            methods: {
+                // 获取URL参数
+                getUrlParam(name) {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    return urlParams.get(name);
+                },
+                // 加载医生信息
+                loadDoctor() {
+                    const id = this.getUrlParam('id');
+                    if (id) {
+                        this.doctorId = parseInt(id);
+                        this.doctor = this.doctors.find(d => d.id === this.doctorId);
+                        // 初始化关注数量
+                        if (this.doctor && this.doctor.followCount !== undefined) {
+                            this.doctorFollowCount = this.doctor.followCount;
+                        }
+                    }
+                },
+                // 切换医生关注状态
+                toggleDoctorFollow() {
+                    if (this.doctorFollowed) {
+                        this.doctorFollowed = false;
+                        this.doctorFollowCount--;
+                        alert('已取消关注');
+                    } else {
+                        this.doctorFollowed = true;
+                        this.doctorFollowCount++;
+                        alert('关注成功');
+                    }
+                },
+                // 处理预约
+                handleAppointment(day) {
+                    // 构造跳转URL，传递医生ID和日期参数
+                    const params = new URLSearchParams({
+                        doctorId: this.doctor.id,
+                        date: day.date
+                    });
+                    window.location.href = 'reservation.html?' + params.toString();
+                },
+                // 跳转到电话咨询
+                goToConsult() {
+                    window.location.href = 'phone-consult.html';
+                }
+            },
+            mounted() {
+                this.loadDoctor();
+            }
+        });
+    </script>
+</body>
+</html>

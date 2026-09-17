@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>在线医院预约挂号</title>
+    <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+        }
+        /* 轮播图 */
+        .banner {
+            max-width: 1200px;
+            width: 100%;
+            margin: 20px auto;
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            height: auto;
+            aspect-ratio: 1200 / 400;
+        }
+        .banner-images {
+            display: flex;
+            transition: transform 0.5s ease;
+            height: 100%;
+        }
+        .banner-images img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        .banner-dots {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+        }
+        .banner-dots span {
+            width: 15px;
+            height: 15px;
+            background-color: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            margin: 0 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .banner-dots span.active {
+            background-color: #1e88e5;
+        }
+        /* 内容区域 */
+        .content {
+            width: 1200px;
+            margin: 5px auto;
+        }
+        .section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e3f2fd;
+        }
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1e88e5;
+            display: flex;
+            align-items: center;
+        }
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background-color: #1e88e5;
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+        .more-link {
+            color: #1e88e5;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .more-link:hover {
+            text-decoration: underline;
+        }
+        /* 医院列表 */
+        .hospital-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        .hospital-item {
+            background-color: #fafbfc;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            border: 1px solid #e8eef3;
+            text-decoration: none;
+            display: block;
+        }
+        .hospital-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(30, 136, 229, 0.15);
+            border-color: #1e88e5;
+        }
+        .hospital-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            max-width: 100%;
+        }
+        .hospital-item h3 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .hospital-item p {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+        .hospital-item .level {
+            display: inline-block;
+            background-color: #e3f2fd;
+            color: #1e88e5;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+        /* 医生列表 */
+        .doctor-list {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+        }
+        .doctor-item {
+            text-align: center;
+            padding: 15px;
+            background-color: #fafbfc;
+            border-radius: 8px;
+            transition: transform 0.3s;
+            cursor: pointer;
+            border: 1px solid #e8eef3;
+            text-decoration: none;
+            display: block;
+        }
+        .doctor-item:hover {
+            transform: translateY(-5px);
+            border-color: #1e88e5;
+        }
+        .doctor-item .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            object-fit: cover;
+            display: block;
+        }
+        .doctor-item h3 {
+            color: #333;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .doctor-item .doctor-title {
+            color: #1e88e5;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+        .doctor-item .doctor-info {
+            color: #666;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        /* 疾病列表 */
+        .disease-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        .disease-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background-color: #fafbfc;
+            border-radius: 8px;
+            transition: background-color 0.3s, border-color 0.3s;
+            cursor: pointer;
+            border: 1px solid #e8eef3;
+            text-decoration: none;
+        }
+        .disease-item:hover {
+            background-color: #e3f2fd;
+            border-color: #1e88e5;
+        }
+        .disease-item .icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #1e88e5 0%, #42a5f5 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            margin-right: 12px;
+        }
+        .disease-item .info {
+            flex: 1;
+        }
+        .disease-item .info h4 {
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+        .disease-item .info p {
+            color: #999;
+            font-size: 12px;
+        }
+        /* 科普文章列表 */
+        .article-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+        .article-item {
+            display: flex;
+            flex-direction: row;
+            padding: 10px;
+            background-color: #fafbfc;
+            border-radius: 8px;
+            transition: background-color 0.3s, border-color 0.3s;
+            cursor: pointer;
+            border: 1px solid #e8eef3;
+            box-sizing: border-box;
+            width: 100%;
+            overflow: hidden;
+            text-decoration: none;
+        }
+        .article-item:hover {
+            background-color: #e3f2fd;
+            border-color: #1e88e5;
+        }
+        .article-item img {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        .article-item .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            min-width: 0;
+            overflow: hidden;
+        }
+        .article-item .content h3 {
+            color: #333;
+            font-size: 17px;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        .article-item .content p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 10px;
+        }
+        .article-item .content .meta {
+            color: #999;
+            font-size: 13px;
+            display: flex;
+            gap: 20px;
+        }
+        .article-item .content .meta span {
+            display: flex;
+            align-items: center;
+        }
+        .article-item .category-tag {
+            background-color: #e3f2fd;
+            color: #1e88e5;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        /* 页脚 */
+        .footer {
+            background-color: #1e88e5;
+            color: white;
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+        .footer-content {
+            width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        .footer-section h4 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #bbdefb;
+        }
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+        .footer-section ul li a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+        .footer-section ul li a:hover {
+            color: white;
+        }
+        .copyright {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+        }
+    </style>
+    <script src="component/Header.vue.js"></script>
+    <script src="component/Footer.vue.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航 -->
+        <header-component :active-nav="activeNav" @nav-change="handleNavChange"></header-component>
+
+        <!-- 轮播图 -->
+        <div class="banner">
+            <div class="banner-images" :style="{transform: 'translateX(' + (-currentBanner * 1200) + 'px)'}">
+                <img v-for="(banner, index) in banners" :key="index" :src="banner.src" :alt="banner.title">
+            </div>
+            <div class="banner-dots">
+                <span v-for="(_, index) in banners" :key="index" :class="{active: currentBanner === index}" @click="currentBanner = index"></span>
+            </div>
+        </div>
+
+        <!-- 内容区域 -->
+        <div class="content">
+            <!-- 推荐医院 -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">推荐医院</div>
+                    <a href="hospital.html" class="more-link">查看更多 ></a>
+                </div>
+                <div class="hospital-list">
+                    <a v-for="hospital in hospitals" :key="hospital.id" :href="'hospital-detail.html?hospitalId=' + hospital.id" class="hospital-item">
+                        <img :src="hospital.image" :alt="hospital.name">
+                        <h3>{{ hospital.name }}</h3>
+                        <p>{{ hospital.address }}</p>
+                        <span class="level">{{ hospital.level }}</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 在线问诊 -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">在线问诊</div>
+                    <a href="doctor.html" class="more-link">查看更多 ></a>
+                </div>
+                <div class="doctor-list">
+                    <a v-for="doctor in doctors" :key="doctor.id" :href="'doctor-detail.html?id=' + doctor.id" class="doctor-item">
+                        <img :src="doctor.avatar" alt="doctor" class="avatar">
+                        <h3>{{ doctor.name }}</h3>
+                        <p class="doctor-title">{{ doctor.title }}</p>
+                        <p class="doctor-info">{{ doctor.hospital }} | {{ doctor.department }}</p>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 常见疾病 -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">常见疾病</div>
+                    <a href="disease.html" class="more-link">查看更多 ></a>
+                </div>
+                <div class="disease-list">
+                    <a v-for="disease in diseases" :key="disease.id" :href="'disease-detail.html?id=' + disease.id" class="disease-item">
+                        <div class="icon">{{ disease.icon }}</div>
+                        <div class="info">
+                            <h4>{{ disease.name }}</h4>
+                            <p>{{ disease.count }}人关注</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 健康科普 -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">健康科普</div>
+                    <a href="article.html" class="more-link">查看更多 ></a>
+                </div>
+                <div class="article-list">
+                    <a v-for="article in articles" :key="article.id" :href="'article-detail.html?id=' + article.id" class="article-item">
+                        <img :src="article.image" :alt="article.title">
+                        <div class="content">
+                            <h3>{{ article.title }}</h3>
+                            <p>{{ article.summary }}</p>
+                            <div class="meta">
+                                <span class="category-tag">{{ article.category }}</span>
+                                <span>发布时间：{{ article.date }}</span>
+                                <span>阅读量：{{ article.views }}</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer-component></footer-component>
+    </div>
+
+    <script>
+        // Header和Footer组件已经在外部引入
+
+        // 主应用
+        new Vue({
+            el: '#app',
+            data: {
+                activeNav: 'home',
+                currentBanner: 0,
+                banners: [
+                    { src: 'img/banner_05.png', title: 'banner1' },
+                    { src: 'img/banner_06.png', title: 'banner2' },
+                    { src: 'img/banner_07.png', title: 'banner3' }
+                ],
+                hospitals: [
+                    { id: 1, name: '北京协和医院', address: '北京市东城区东单北大街', level: '三级甲等', image: 'img/hospital_100001977.jpg' },
+                    { id: 2, name: '上海瑞金医院', address: '上海市黄浦区瑞金二路', level: '三级甲等', image: 'img/hospital_14616536073112.jpg' },
+                    { id: 3, name: '广州中山医院', address: '广州市越秀区东风西路', level: '三级甲等', image: 'img/hospital_16043929044175.jpg' },
+                    { id: 4, name: '杭州浙一医院', address: '杭州市上城区庆春路', level: '三级甲等', image: 'img/hospital_16195932543164.png' }
+                ],
+                doctors: [
+                    { id: 1, name: '张明远', title: '主任医师', department: '心内科', hospital: '北京协和医院', hospitalLevel: '三甲', experience: '30年', avatar: 'img/doctor-male-doc.jpg', goodAt: '冠心病、高血压、心律失常等心血管疾病的诊治', tags: ['医保定点', '三甲医院'] },
+                    { id: 2, name: '李晓华', title: '副主任医师', department: '妇产科', hospital: '上海瑞金医院', hospitalLevel: '三甲', experience: '20年', avatar: 'img/doctor-female-doc.jpg', goodAt: '高危妊娠、妇科肿瘤、微创手术', tags: ['医保定点', '三甲医院'] },
+                    { id: 3, name: '王建国', title: '主任医师', department: '骨科', hospital: '广州中山医院', hospitalLevel: '三甲', experience: '25年', avatar: 'img/doctor-male-doc.jpg', goodAt: '脊柱侧弯、椎间盘突出、关节置换', tags: ['医保定点', '三甲医院'] },
+                    { id: 4, name: '陈美玲', title: '副主任医师', department: '儿科', hospital: '杭州浙一医院', hospitalLevel: '三甲', experience: '15年', avatar: 'img/doctor-female-doc.jpg', goodAt: '小儿呼吸、哮喘、过敏性疾病', tags: ['医保定点', '三甲医院'] },
+                    { id: 5, name: '刘志强', title: '主任医师', department: '神经内科', hospital: '北京协和医院', hospitalLevel: '三甲', experience: '28年', avatar: 'img/doctor-male-doc.jpg', goodAt: '脑血管病、帕金森、癫痫、头痛', tags: ['医保定点', '三甲医院'] }
+                ],
+                diseases: [
+                    { id: 1, name: '高血压', count: '12.5万', icon: '🩺' },
+                    { id: 2, name: '糖尿病', count: '9.8万', icon: '💉' },
+                    { id: 3, name: '冠心病', count: '8.2万', icon: '❤️' },
+                    { id: 4, name: '感冒发烧', count: '25.6万', icon: '🤒' },
+                    { id: 5, name: '颈椎病', count: '15.3万', icon: '🪧' },
+                    { id: 6, name: '关节炎', count: '7.9万', icon: '🦵' },
+                    { id: 7, name: '皮肤病', count: '6.4万', icon: '🧴' },
+                    { id: 8, name: '胃病', count: '11.2万', icon: '🫀' }
+                ],
+                articles: [
+                    { id: 1, title: '春季养生指南：如何预防春季常见病', summary: '春季是万物复苏的季节，但也是各种疾病的高发期。本文为您介绍春季养生的要点和常见病的预防方法，帮助您和家人健康度过春天。', category: '肿瘤内科', date: '2024-03-15 10:00:00', views: 2356, image: 'img/health_01.jpeg' },
+                    { id: 2, title: '高血压患者的日常饮食注意事项', summary: '高血压是一种常见的慢性病，合理的饮食对于控制血压至关重要。本文详细介绍高血压患者的饮食原则和禁忌，帮助您科学管理血压。', category: '心内科', date: '2024-03-14 09:30:00', views: 1890, image: 'img/health_02.jpeg' },
+                    { id: 3, title: '儿童疫苗接种全攻略', summary: '疫苗接种是保护儿童健康的重要手段。本文为家长们整理了儿童疫苗接种的时间表、注意事项和常见问题解答。', category: '儿科', date: '2024-03-13 14:00:00', views: 3201, image: 'img/health_03.jpeg' },
+                    { id: 4, title: '上班族如何预防颈椎病', summary: '长时间坐在电脑前工作的上班族，颈椎健康问题日益突出。本文为您介绍简单有效的颈椎保健方法和日常锻炼建议。', category: '骨科', date: '2024-03-12 11:00:00', views: 4521, image: 'img/health_01.jpeg' }
+                ]
+            },
+            methods: {
+                handleNavChange(nav) {
+                    this.activeNav = nav;
+                }
+            },
+            mounted() {
+                // 自动轮播
+                setInterval(() => {
+                    this.currentBanner = (this.currentBanner + 1) % this.banners.length;
+                }, 4000);
+            }
+        });
+    </script>
+</body>
+</html>

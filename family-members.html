@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>就诊成员 - 健康之路在线医疗</title>
+    <script src="js/vue.js"></script>
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+        }
+        /* 内容区域 */
+        .content {
+            width: 1200px;
+            margin: 30px auto;
+            display: flex;
+            gap: 25px;
+        }
+        /* 左侧菜单 */
+        .sidebar {
+            width: 240px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .menu-group {
+            margin-bottom: 25px;
+        }
+        .menu-group:last-child {
+            margin-bottom: 0;
+        }
+        .menu-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 12px;
+            padding-left: 10px;
+            border-left: 4px solid #1e88e5;
+        }
+        .menu-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .menu-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #666;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        .menu-item:hover {
+            background-color: #f0f7ff;
+            color: #1e88e5;
+        }
+        .menu-item.active {
+            background-color: #e3f2fd;
+            color: #1e88e5;
+            font-weight: 500;
+        }
+        .menu-item::before {
+            content: '▶';
+            margin-right: 8px;
+            font-size: 10px;
+            color: #999;
+        }
+        .menu-item.active::before {
+            color: #1e88e5;
+        }
+        /* 右侧内容 */
+        .main-content {
+            flex: 1;
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e3f2fd;
+        }
+        .page-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .btn-add {
+            padding: 8px 20px;
+            background-color: #1e88e5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-add:hover {
+            background-color: #1976d2;
+        }
+        /* 成员列表 */
+        .member-list {
+            border: 1px solid #e8eef3;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .member-item {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .member-item:last-child {
+            border-bottom: none;
+        }
+        .member-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .member-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #e3f2fd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #1e88e5;
+        }
+        .member-details {
+            display: flex;
+            flex-direction: column;
+        }
+        .member-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .member-name span.default-tag {
+            font-size: 12px;
+            font-weight: normal;
+            color: white;
+            background-color: #4caf50;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+        .member-desc {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        .member-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .action-btn {
+            padding: 6px 15px;
+            border: 1px solid #e8eef3;
+            background-color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #666;
+            transition: all 0.3s;
+        }
+        .action-btn:hover {
+            border-color: #1e88e5;
+            color: #1e88e5;
+        }
+        .action-btn.delete-btn:hover {
+            border-color: #ef5350;
+            color: #ef5350;
+        }
+        .action-btn.default-btn.active {
+            background-color: #e3f2fd;
+            border-color: #1e88e5;
+            color: #1e88e5;
+        }
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 80px 0;
+            color: #999;
+        }
+        /* 弹窗 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal {
+            background-color: white;
+            border-radius: 8px;
+            width: 450px;
+            max-width: 90%;
+            overflow: hidden;
+        }
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+        .modal-close {
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .modal-close:hover {
+            color: #333;
+        }
+        .modal-body {
+            padding: 20px;
+        }
+        .form-item {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        .form-label {
+            width: 100px;
+            font-size: 14px;
+            color: #666;
+            text-align: right;
+            padding-right: 15px;
+        }
+        .form-label .required {
+            color: #ef5350;
+            margin-right: 3px;
+        }
+        .form-input {
+            flex: 1;
+        }
+        .form-input input,
+        .form-input select {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #e8eef3;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #333;
+        }
+        .form-input input:focus,
+        .form-input select:focus {
+            outline: none;
+            border-color: #1e88e5;
+        }
+        .radio-group {
+            display: flex;
+            gap: 20px;
+        }
+        .radio-item {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .radio-item input[type="radio"] {
+            margin-right: 6px;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        .radio-item span {
+            font-size: 14px;
+            color: #333;
+        }
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+        .btn-cancel {
+            padding: 8px 20px;
+            border: 1px solid #e8eef3;
+            background-color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+        }
+        .btn-cancel:hover {
+            border-color: #1e88e5;
+            color: #1e88e5;
+        }
+        .btn-submit {
+            padding: 8px 20px;
+            background-color: #1e88e5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-submit:hover {
+            background-color: #1976d2;
+        }
+        /* 页脚 */
+        .footer {
+            background-color: #1e88e5;
+            color: white;
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+        .footer-content {
+            width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        .footer-section h4 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #bbdefb;
+        }
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+        .footer-section ul li a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .footer-section ul li a:hover {
+            color: white;
+        }
+        .copyright {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+        }
+    </style>
+    <script src="component/Header.vue.js"></script>
+    <script src="component/Sidebar.vue.js"></script>
+    <script src="component/Footer.vue.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航 -->
+        <header-component :active-nav="''"></header-component>
+
+        <!-- 内容区域 -->
+        <div class="content">
+            <!-- 左侧菜单 -->
+            <sidebar-component 
+                :active-menu="activeMenu" 
+                @menu-change="handleMenuChange"
+            ></sidebar-component>
+
+            <!-- 右侧内容 -->
+            <div class="main-content">
+                <div class="page-header">
+                    <div class="page-title">就诊成员</div>
+                    <button class="btn-add" @click="openAddModal">+ 添加成员</button>
+                </div>
+                
+                <!-- 成员列表 -->
+                <div v-if="members.length > 0" class="member-list">
+                    <div v-for="member in members" :key="member.id" class="member-item">
+                        <div class="member-info">
+                            <div class="member-avatar">{{ member.name.charAt(0) }}</div>
+                            <div class="member-details">
+                                <div class="member-name">
+                                    {{ member.name }}
+                                    <span v-if="member.isDefault" class="default-tag">默认</span>
+                                </div>
+                                <div class="member-desc">关系：{{ member.relation }}</div>
+                                <div class="member-desc">身份证：{{ maskIdCard(member.idCard) }}</div>
+                                <div class="member-desc">手机号：{{ maskPhone(member.phone) }}</div>
+                            </div>
+                        </div>
+                        <div class="member-actions">
+                            <button 
+                                :class="['action-btn', 'default-btn', {active: member.isDefault}]"
+                                @click="setDefault(member.id)"
+                            >
+                                {{ member.isDefault ? '默认' : '设为默认' }}
+                            </button>
+                            <button class="action-btn" @click="openEditModal(member)">修改</button>
+                            <button class="action-btn delete-btn" @click="deleteMember(member.id)">删除</button>
+                        </div>
+                    </div>
+                </div>
+                <div v-else class="empty-state">
+                    <p>暂无就诊成员，请添加</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 添加/编辑弹窗 -->
+        <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <span>{{ isEdit ? '编辑就诊成员' : '添加就诊成员' }}</span>
+                    <span class="modal-close" @click="closeModal">×</span>
+                </div>
+                <div class="modal-body">
+                    <div class="form-item">
+                        <label class="form-label">
+                            <span class="required">*</span>姓名
+                        </label>
+                        <div class="form-input">
+                            <input type="text" v-model="formData.name" placeholder="请输入姓名" />
+                        </div>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">
+                            性别
+                        </label>
+                        <div class="form-input">
+                            <div class="radio-group">
+                                <label class="radio-item">
+                                    <input type="radio" value="male" v-model="formData.gender" />
+                                    <span>男</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" value="female" v-model="formData.gender" />
+                                    <span>女</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">
+                            生日
+                        </label>
+                        <div class="form-input">
+                            <input type="date" v-model="formData.birthday" />
+                        </div>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">
+                            <span class="required">*</span>与本人关系
+                        </label>
+                        <div class="form-input">
+                            <select v-model="formData.relation">
+                                <option value="">请选择关系</option>
+                                <option value="本人">本人</option>
+                                <option value="配偶">配偶</option>
+                                <option value="父母">父母</option>
+                                <option value="子女">子女</option>
+                                <option value="兄弟姐妹">兄弟姐妹</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">
+                            <span class="required">*</span>手机号
+                        </label>
+                        <div class="form-input">
+                            <input type="tel" v-model="formData.phone" placeholder="请输入手机号" />
+                        </div>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">
+                            <span class="required">*</span>身份证号
+                        </label>
+                        <div class="form-input">
+                            <input type="text" v-model="formData.idCard" placeholder="请输入身份证号" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" @click="closeModal">取消</button>
+                    <button class="btn-submit" @click="submitForm">{{ isEdit ? '保存修改' : '添加成员' }}</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer-component></footer-component>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                activeMenu: 'familyMembers',
+                members: [],
+                showModal: false,
+                isEdit: false,
+                editingId: null,
+                formData: {
+                    name: '',
+                    gender: 'male',
+                    birthday: '',
+                    relation: '',
+                    phone: '',
+                    idCard: ''
+                }
+            },
+            methods: {
+                handleMenuChange(menu) {
+                    this.activeMenu = menu;
+                    if (menu === 'myAppointment') {
+                        window.location.href = 'my-appointment.html';
+                    } else if (menu === 'myConsult') {
+                        window.location.href = 'my-consult.html';
+                    } else if (menu === 'myReviews') {
+                        window.location.href = 'my-reviews.html';
+                    } else if (menu === 'followHospital') {
+                        window.location.href = 'follow-hospital.html';
+                    } else if (menu === 'followDoctor') {
+                        window.location.href = 'follow-doctor.html';
+                    } else if (menu === 'followDisease') {
+                        window.location.href = 'follow-disease.html';
+                    } else if (menu === 'profile' || menu === 'personalInfo') {
+                        window.location.href = 'personal-info.html';
+                    } else if (menu === 'changePassword') {
+                        window.location.href = 'change-password.html';
+                    } else if (menu === 'myMessages') {
+                        window.location.href = 'my-messages.html';
+                    } else if (menu === 'myFeedback') {
+                        window.location.href = 'my-feedback.html';
+                    }
+                },
+                openAddModal() {
+                    this.isEdit = false;
+                    this.editingId = null;
+                    this.formData = {
+                        name: '',
+                        gender: 'male',
+                        birthday: '',
+                        relation: '',
+                        phone: '',
+                        idCard: ''
+                    };
+                    this.showModal = true;
+                },
+                openEditModal(member) {
+                    this.isEdit = true;
+                    this.editingId = member.id;
+                    this.formData = {
+                        name: member.name,
+                        gender: member.gender,
+                        birthday: member.birthday,
+                        relation: member.relation,
+                        phone: member.phone,
+                        idCard: member.idCard
+                    };
+                    this.showModal = true;
+                },
+                closeModal() {
+                    this.showModal = false;
+                    this.isEdit = false;
+                    this.editingId = null;
+                    this.formData = {
+                        name: '',
+                        gender: 'male',
+                        birthday: '',
+                        relation: '',
+                        phone: '',
+                        idCard: ''
+                    };
+                },
+                submitForm() {
+                    // 表单验证 - 必填项：姓名、与本人关系、手机号、身份证号
+                    if (!this.formData.name.trim()) {
+                        alert('请输入姓名');
+                        return;
+                    }
+                    if (!this.formData.relation) {
+                        alert('请选择与本人关系');
+                        return;
+                    }
+                    if (!this.formData.phone.trim()) {
+                        alert('请输入手机号');
+                        return;
+                    }
+                    // 手机号格式验证
+                    const phoneReg = /^1[3-9]\d{9}$/;
+                    if (!phoneReg.test(this.formData.phone)) {
+                        alert('请输入正确的手机号');
+                        return;
+                    }
+                    if (!this.formData.idCard.trim()) {
+                        alert('请输入身份证号');
+                        return;
+                    }
+                    // 身份证号格式验证
+                    const idCardReg = /^[1-9]\d{5}(18|19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]$/;
+                    if (!idCardReg.test(this.formData.idCard)) {
+                        alert('请输入正确的身份证号');
+                        return;
+                    }
+
+                    if (this.isEdit) {
+                        // 编辑成员
+                        const index = this.members.findIndex(m => m.id === this.editingId);
+                        if (index !== -1) {
+                            this.members[index] = {
+                                ...this.members[index],
+                                ...this.formData
+                            };
+                        }
+                        alert('修改成功');
+                    } else {
+                        // 添加成员
+                        const newMember = {
+                            id: Date.now(),
+                            ...this.formData,
+                            isDefault: this.members.length === 0
+                        };
+                        this.members.push(newMember);
+                        alert('添加成功');
+                    }
+                    this.closeModal();
+                },
+                setDefault(id) {
+                    this.members.forEach(m => {
+                        m.isDefault = m.id === id;
+                    });
+                    alert('已设置为默认就诊成员');
+                },
+                deleteMember(id) {
+                    if (confirm('确定要删除该就诊成员吗？')) {
+                        const member = this.members.find(m => m.id === id);
+                        if (member && member.isDefault && this.members.length > 1) {
+                            // 如果删除的是默认成员，将第一个非默认成员设为默认
+                            const firstNonDefault = this.members.find(m => m.id !== id);
+                            if (firstNonDefault) {
+                                firstNonDefault.isDefault = true;
+                            }
+                        }
+                        this.members = this.members.filter(m => m.id !== id);
+                        alert('删除成功');
+                    }
+                },
+                // 身份证号脱敏
+                maskIdCard(idCard) {
+                    if (!idCard) return '';
+                    return idCard.substring(0, 6) + '********' + idCard.substring(14);
+                },
+                // 手机号脱敏
+                maskPhone(phone) {
+                    if (!phone) return '';
+                    return phone.substring(0, 3) + '****' + phone.substring(7);
+                },
+                loadMembers() {
+                    // 模拟加载就诊成员数据
+                    this.members = [
+                        { 
+                            id: 1, 
+                            name: '张三', 
+                            gender: 'male', 
+                            birthday: '1990-05-15', 
+                            relation: '本人', 
+                            idCard: '110101199005151234',
+                            phone: '13812345678',
+                            isDefault: true
+                        },
+                        { 
+                            id: 2, 
+                            name: '李四', 
+                            gender: 'female', 
+                            birthday: '1992-08-20', 
+                            relation: '配偶', 
+                            idCard: '310101199208205678',
+                            phone: '13987654321',
+                            isDefault: false
+                        },
+                        { 
+                            id: 3, 
+                            name: '张小明', 
+                            gender: 'male', 
+                            birthday: '2015-12-10', 
+                            relation: '子女', 
+                            idCard: '110101201512109012',
+                            phone: '13611112222',
+                            isDefault: false
+                        }
+                    ];
+                }
+            },
+            mounted() {
+                this.loadMembers();
+            }
+        });
+    </script>
+</body>
+</html>

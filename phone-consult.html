@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>电话咨询 - 健康之路在线医疗</title>
+    <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+        }
+        /* 顶部导航 */
+        .header {
+            background: linear-gradient(135deg, #1e88e5 0%, #42a5f5 100%);
+            box-shadow: 0 2px 10px rgba(30, 136, 229, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-content {
+            width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+        }
+        .header .logo {
+            display: flex;
+            align-items: center;
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .header .nav {
+            display: flex;
+            gap: 5px;
+        }
+        .header .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 18px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            font-size: 15px;
+        }
+        .header .nav a:hover, .header .nav a.active {
+            background-color: #1565c0;
+        }
+        .header .search-box {
+            display: flex;
+            align-items: center;
+        }
+        .header .search-box input {
+            width: 300px;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px 0 0 4px;
+            font-size: 14px;
+            outline: none;
+        }
+        .header .search-box input:focus {
+            outline: none;
+            box-shadow: none;
+        }
+        .header .search-box button {
+            padding: 8px 20px;
+            border: none;
+            background-color: #1565c0;
+            color: white;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .header .auth {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .header .auth .login-btn, .header .auth .register-btn, .header .auth .user-info {
+            color: white;
+            text-decoration: none;
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .header .auth .login-btn {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .header .auth .register-btn {
+            background-color: white;
+            color: #1e88e5;
+        }
+        .header .auth .user-info {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        /* 面包屑导航 */
+        .breadcrumb {
+            width: 1200px;
+            margin: 20px auto;
+            font-size: 14px;
+            color: #666;
+        }
+        .breadcrumb a {
+            color: #1e88e5;
+            text-decoration: none;
+        }
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        /* 内容区域 */
+        .content {
+            width: 1200px;
+            margin: 0 auto 30px;
+        }
+        /* 咨询表单 */
+        .consult-form {
+            background-color: white;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .consult-form .form-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e3f2fd;
+        }
+        /* 就诊医生信息 */
+        .doctor-info {
+            display: flex;
+            gap: 25px;
+            padding: 20px;
+            background-color: #fafbfc;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 4px solid #1e88e5;
+        }
+        .doctor-info .avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #e3f2fd;
+            flex-shrink: 0;
+        }
+        .doctor-info .info {
+            flex: 1;
+        }
+        .doctor-info .name {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .doctor-info .online-badge {
+            display: inline-block;
+            background-color: #4caf50;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .doctor-info .title {
+            display: inline-block;
+            background-color: #e3f2fd;
+            color: #1e88e5;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+        .doctor-info .department, .doctor-info .hospital {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .doctor-info .specialty {
+            margin-bottom: 10px;
+        }
+        .doctor-info .specialty-label {
+            color: #999;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+        .doctor-info .specialty-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .doctor-info .specialty-tags .tag {
+            background-color: #fff3e0;
+            color: #f57c00;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .doctor-info .introduction {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        .form-group label span {
+            color: #f44336;
+            margin-right: 5px;
+        }
+        /* 就诊人选择 */
+        .patient-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            max-height: 100px;
+            overflow: hidden;
+            transition: max-height 0.3s;
+        }
+        .patient-selector.expanded {
+            max-height: 500px;
+        }
+        .patient-card {
+            flex: 0 0 calc(33.333% - 8px);
+            min-width: 280px;
+            padding: 15px;
+            border: 2px solid #e8eef3;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: #fafbfc;
+        }
+        .patient-card:hover, .patient-card.selected {
+            border-color: #1e88e5;
+            background-color: #f0f7ff;
+        }
+        .patient-card.selected::after {
+            content: '';
+            display: block;
+            width: 20px;
+            height: 20px;
+            background-color: #1e88e5;
+            border-radius: 50%;
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .patient-card.add-patient {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100px;
+            border-style: dashed;
+            color: #999;
+        }
+        .patient-card.add-patient img {
+            width: 30px;
+            height: 30px;
+            margin-bottom: 8px;
+        }
+        .patient-card.add-patient:hover {
+            border-color: #1e88e5;
+            color: #1e88e5;
+        }
+        .patient-card .patient-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .patient-card .patient-id {
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 3px;
+        }
+        .patient-card .patient-phone {
+            font-size: 13px;
+            color: #666;
+        }
+        .toggle-patients {
+            margin-top: 12px;
+            color: #1e88e5;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+        }
+        .toggle-patients img {
+            width: 16px;
+            height: 16px;
+            margin-left: 5px;
+            transition: transform 0.3s;
+        }
+        .toggle-patients.expanded img {
+            transform: rotate(180deg);
+        }
+        /* 表单输入 */
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e8eef3;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #333;
+            transition: border-color 0.3s;
+            background-color: #fafbfc;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #1e88e5;
+            background-color: white;
+        }
+        .form-control::placeholder {
+            color: #999;
+        }
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
+            line-height: 1.6;
+        }
+        /* 协议勾选 */
+        .agreement {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .agreement input[type="checkbox"] {
+            margin-top: 3px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .agreement label {
+            font-size: 13px;
+            color: #666;
+            font-weight: normal;
+            cursor: pointer;
+            margin-bottom: 0;
+        }
+        .agreement label a {
+            color: #1e88e5;
+            text-decoration: none;
+        }
+        .agreement label a:hover {
+            text-decoration: underline;
+        }
+        /* 提交按钮 */
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background-color: #1e88e5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .submit-btn:hover {
+            background-color: #1565c0;
+        }
+        .submit-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        /* 提示区域 */
+        .benefits {
+            background: linear-gradient(135deg, #1e88e5 0%, #42a5f5 100%);
+            border-radius: 8px;
+            padding: 30px;
+            color: white;
+        }
+        .benefits .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 25px;
+        }
+        .benefit-item {
+            text-align: center;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+        .benefit-icon {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 15px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #1e88e5;
+        }
+        .benefit-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .benefit-desc {
+            font-size: 13px;
+            line-height: 1.6;
+            opacity: 0.9;
+            text-align: left;
+        }
+        /* 页脚 */
+        .footer {
+            background-color: #1e88e5;
+            color: white;
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+        .footer-content {
+            width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        .footer-section h4 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #bbdefb;
+        }
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+        .footer-section ul li a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+        .footer-section ul li a:hover {
+            color: white;
+        }
+        .copyright {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+        }
+        /* 新增就诊人弹窗 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal {
+            background-color: white;
+            border-radius: 8px;
+            width: 450px;
+            padding: 30px;
+            transform: translateY(-20px);
+            transition: transform 0.3s;
+        }
+        .modal-overlay.show .modal {
+            transform: translateY(0);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .modal-close {
+            width: 30px;
+            height: 30px;
+            border: none;
+            background-color: #f5f5f5;
+            border-radius: 50%;
+            font-size: 20px;
+            color: #999;
+            cursor: pointer;
+        }
+        .modal-close:hover {
+            background-color: #eee;
+        }
+        .modal-footer {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            justify-content: flex-end;
+        }
+        .modal-btn {
+            padding: 10px 25px;
+            border-radius: 6px;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .modal-btn.cancel {
+            background-color: #f5f5f5;
+            color: #666;
+        }
+        .modal-btn.cancel:hover {
+            background-color: #eee;
+        }
+        .modal-btn.confirm {
+            background-color: #1e88e5;
+            color: white;
+        }
+        .modal-btn.confirm:hover {
+            background-color: #1565c0;
+        }
+        /* 成功提示 */
+        .success-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 25px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            z-index: 2000;
+        }
+        .success-message.show {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+    <script src="component/Header.vue.js"></script>
+    <script src="component/Footer.vue.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航 -->
+        <header-component :active-nav="'doctor'"></header-component>
+
+        <!-- 面包屑导航 -->
+        <div class="breadcrumb">
+            <a href="index.html">首页</a> > 
+            <a href="doctor.html">找医生</a> > 
+            <span>电话咨询</span>
+        </div>
+
+        <!-- 内容区域 -->
+        <div class="content">
+            <!-- 咨询表单 -->
+            <div class="consult-form">
+                <div class="form-title">电话咨询预约</div>
+                
+                <!-- 就诊医生信息 -->
+                <div v-if="doctor" class="doctor-info">
+                    <img :src="doctor.avatar" :alt="doctor.name" class="avatar">
+                    <div class="info">
+                        <div class="name">{{ doctor.name }}</div>
+                        <span class="title">{{ doctor.title }}</span>
+                        <div class="department">所属科室：{{ doctor.department }}</div>
+                        <div class="hospital">所在医院：{{ doctor.hospital }}</div>
+                        <div class="specialty">
+                            <div class="specialty-label">擅长领域：</div>
+                            <div class="specialty-tags">
+                                <span v-for="tag in doctor.tags" :key="tag" class="tag">{{ tag }}</span>
+                            </div>
+                        </div>
+                        <div class="introduction">{{ doctor.introduction }}</div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label><span>*</span>选择就诊人</label>
+                    <div :class="['patient-selector', {expanded: showAllPatients}]">
+                        <div 
+                            v-for="patient in patients" 
+                            :key="patient.id"
+                            :class="['patient-card', {selected: selectedPatientId === patient.id}]"
+                            @click="selectPatient(patient.id)"
+                        >
+                            <div class="patient-name">{{ patient.name }}</div>
+                            <div class="patient-id">{{ patient.idCard }}</div>
+                            <div class="patient-phone">{{ patient.phone }}</div>
+                        </div>
+                        <div class="patient-card add-patient" @click="openAddPatient">
+                            <img src="img/icon-add.png" alt="添加就诊人">
+                            <span>新增就诊人</span>
+                        </div>
+                    </div>
+                    <div 
+                        v-if="patients.length > 3" 
+                        :class="['toggle-patients', {expanded: showAllPatients}]"
+                        @click="showAllPatients = !showAllPatients"
+                    >
+                        {{ showAllPatients ? '收起' : '展开更多' }}
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231e88e5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><span>*</span>病情描述</label>
+                    <textarea 
+                        v-model="form.description" 
+                        class="form-control" 
+                        placeholder="请详细描述您的病情，以便医生更好地为您解答"
+                    ></textarea>
+                </div>
+
+                <div class="agreement">
+                    <input v-model="form.agreed" type="checkbox" id="agreement">
+                    <label for="agreement">
+                        已阅读并同意<a href="#" target="_blank">《个人信息授权声明》</a>
+                    </label>
+                </div>
+
+                <button 
+                    class="submit-btn" 
+                    :disabled="!canSubmit"
+                    @click="submitForm"
+                >
+                    确认提交
+                </button>
+            </div>
+
+            <!-- 提示区域 -->
+            <div class="benefits">
+                <div class="section-title">电话咨询省钱、省时、省心、省力</div>
+                <div class="benefits-grid">
+                    <div class="benefit-item">
+                        <div class="benefit-icon">💰</div>
+                        <div class="benefit-title">省钱</div>
+                        <div class="benefit-desc">在家咨询→不用上医院，避免路费、住宿等系列花销，特别是外地患者。用节省的时间创造金钱及价值。</div>
+                    </div>
+                    <div class="benefit-item">
+                        <div class="benefit-icon">⏰</div>
+                        <div class="benefit-title">省时</div>
+                        <div class="benefit-desc">电话咨询→利用空余时间咨询医生，不用专门跑趟医院特别是外地患者，节省了很多的时间。</div>
+                    </div>
+                    <div class="benefit-item">
+                        <div class="benefit-icon">💚</div>
+                        <div class="benefit-title">省心</div>
+                        <div class="benefit-desc">专家咨询→电话中专家更有时间给患者做详细解答，减轻患者对病情的疑虑。在家咨询医生，患者不用担心交叉感染。健康问题权威指导→让权威专家成为私人健康顾问，省心。</div>
+                    </div>
+                    <div class="benefit-item">
+                        <div class="benefit-icon">💪</div>
+                        <div class="benefit-title">省力</div>
+                        <div class="benefit-desc">电话咨询→省去您跑医院的精力。</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer-component></footer-component>
+
+        <!-- 新增就诊人弹窗 -->
+        <div :class="['modal-overlay', {show: showAddModal}]" @click.self="closeAddPatient">
+            <div class="modal">
+                <div class="modal-header">
+                    <div class="modal-title">新增就诊人</div>
+                    <button class="modal-close" @click="closeAddPatient">×</button>
+                </div>
+                <div class="form-group">
+                    <label><span>*</span>姓名</label>
+                    <input v-model="newPatient.name" type="text" class="form-control" placeholder="请输入姓名">
+                </div>
+                <div class="form-group">
+                    <label><span>*</span>身份证号</label>
+                    <input v-model="newPatient.idCard" type="text" class="form-control" placeholder="请输入身份证号">
+                </div>
+                <div class="form-group">
+                    <label><span>*</span>手机号</label>
+                    <input v-model="newPatient.phone" type="tel" class="form-control" placeholder="请输入手机号">
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn cancel" @click="closeAddPatient">取消</button>
+                    <button class="modal-btn confirm" @click="addPatient">确认添加</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 成功提示 -->
+        <div :class="['success-message', {show: showSuccess}]">
+            提交成功！我们会尽快安排医生与您联系。
+        </div>
+    </div>
+
+    <script>
+        // Header和Footer组件已经在外部引入
+
+        // 主应用
+        new Vue({
+            el: '#app',
+            data: {
+                // 医生信息
+                doctor: {
+                    id: 1,
+                    name: '张明远',
+                    department: '心内科',
+                    hospital: '北京协和医院',
+                    avatar: 'img/doctor-male-doc.jpg',
+                    title: '主任医师',
+                    tags: ['擅长冠心病', '高血压', '心律失常', '心肌病'],
+                    online: true,
+                    introduction: '张明远，主任医师，从事心血管内科临床工作30余年，擅长冠心病、高血压、心律失常、心肌病等心血管疾病的诊断和治疗。'
+                },
+                // 就诊人列表
+                patients: [
+                    { id: 1, name: '张三', idCard: '1101011990****1234', phone: '138****1234' },
+                    { id: 2, name: '李四', idCard: '1101021985****5678', phone: '139****5678' },
+                    { id: 3, name: '王五', idCard: '1101031995****9012', phone: '137****9012' },
+                    { id: 4, name: '赵六', idCard: '1101041988****3456', phone: '136****3456' },
+                    { id: 5, name: '孙七', idCard: '1101051992****7890', phone: '135****7890' }
+                ],
+                selectedPatientId: null,
+                showAllPatients: false,
+                showAddModal: false,
+                showSuccess: false,
+                newPatient: {
+                    name: '',
+                    idCard: '',
+                    phone: ''
+                },
+                form: {
+                    phone: '',
+                    description: '',
+                    agreed: false
+                }
+            },
+            computed: {
+                canSubmit() {
+                    return this.selectedPatientId && 
+                           this.form.description && 
+                           this.form.agreed;
+                }
+            },
+            methods: {
+                selectPatient(id) {
+                    this.selectedPatientId = id;
+                },
+                openAddPatient() {
+                    this.newPatient = { name: '', idCard: '', phone: '' };
+                    this.showAddModal = true;
+                },
+                closeAddPatient() {
+                    this.showAddModal = false;
+                },
+                addPatient() {
+                    if (!this.newPatient.name || !this.newPatient.idCard || !this.newPatient.phone) {
+                        alert('请填写完整的就诊人信息');
+                        return;
+                    }
+                    const newId = Math.max(...this.patients.map(p => p.id)) + 1;
+                    this.patients.push({
+                        id: newId,
+                        name: this.newPatient.name,
+                        idCard: this.newPatient.idCard,
+                        phone: this.newPatient.phone
+                    });
+                    this.selectedPatientId = newId;
+                    this.closeAddPatient();
+                },
+                submitForm() {
+                    if (!this.canSubmit) return;
+                    // 生成订单号
+                    const orderNo = 'CONSULT' + Date.now() + 'A26';
+                    // 获取选中的就诊人信息
+                    const patient = this.patients.find(p => p.id === this.selectedPatientId);
+                    // 构造跳转URL，传递参数
+                    const params = new URLSearchParams({
+                        orderNo: orderNo,
+                        doctorName: this.doctor.name,
+                        doctorTitle: this.doctor.title,
+                        doctorDepartment: this.doctor.department,
+                        patientName: patient.name,
+                        patientPhone: patient.phone,
+                        amount: 100.00
+                    });
+                    // 跳转到支付页面
+                    window.location.href = 'consult-pay.html?' + params.toString();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

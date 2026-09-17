@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>订单支付 - 健康之路在线医疗</title>
+    <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <script src="js/auth-interceptor.js"></script>
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+        }
+        /* 顶部导航 */
+        .header {
+            background: linear-gradient(135deg, #1e88e5 0%, #42a5f5 100%);
+            box-shadow: 0 2px 10px rgba(30, 136, 229, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-content {
+            width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+        }
+        .header .logo {
+            display: flex;
+            align-items: center;
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .header .nav {
+            display: flex;
+            gap: 5px;
+        }
+        .header .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 18px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            font-size: 15px;
+        }
+        .header .nav a:hover, .header .nav a.active {
+            background-color: #1565c0;
+        }
+        .header .search-box {
+            display: flex;
+            align-items: center;
+        }
+        .header .search-box input {
+            width: 300px;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px 0 0 4px;
+            font-size: 14px;
+            outline: none;
+        }
+        .header .search-box input:focus {
+            outline: none;
+            box-shadow: none;
+        }
+        .header .search-box button {
+            padding: 8px 20px;
+            border: none;
+            background-color: #1565c0;
+            color: white;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .header .auth {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .header .auth .login-btn, .header .auth .register-btn, .header .auth .user-info {
+            color: white;
+            text-decoration: none;
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .header .auth .login-btn {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .header .auth .register-btn {
+            background-color: white;
+            color: #1e88e5;
+        }
+        .header .auth .logout-btn {
+            color: white;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            background-color: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+        }
+        /* 面包屑导航 */
+        .breadcrumb {
+            width: 1200px;
+            margin: 20px auto;
+            font-size: 14px;
+            color: #666;
+        }
+        .breadcrumb a {
+            color: #1e88e5;
+            text-decoration: none;
+        }
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        /* 底部页脚 */
+        .footer {
+            background-color: #2c3e50;
+            color: white;
+            padding: 40px 0 20px;
+            margin-top: 50px;
+        }
+        .footer-content {
+            width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            padding-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .footer-section {
+            flex: 1;
+            padding: 0 20px;
+        }
+        .footer-section h4 {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: white;
+        }
+        .footer-section ul {
+            list-style: none;
+        }
+        .footer-section li {
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .footer-section a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .footer-section a:hover {
+            color: white;
+        }
+        .copyright {
+            text-align: center;
+            padding-top: 20px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        /* 内容区域 */
+        .content {
+            width: 600px;
+            margin: 30px auto;
+        }
+        .pay-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .card-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e3f2fd;
+        }
+        .order-info {
+            margin-bottom: 30px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            color: #666;
+            font-size: 14px;
+        }
+        .info-value {
+            color: #333;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .pay-method {
+            margin-bottom: 30px;
+        }
+        .pay-method-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .pay-options {
+            display: flex;
+            gap: 20px;
+        }
+        .pay-option {
+            flex: 1;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .pay-option.selected {
+            border-color: #1e88e5;
+            background-color: #f5f9ff;
+        }
+        .pay-option:hover {
+            border-color: #1e88e5;
+        }
+        .pay-option .icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+        .pay-option.alipay .icon {
+            background-color: #1677ff;
+            color: white;
+        }
+        .pay-option.wechat .icon {
+            background-color: #07c160;
+            color: white;
+        }
+        .pay-option .label {
+            font-size: 15px;
+            color: #333;
+        }
+        .amount-section {
+            background-color: #fafafa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .amount-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .amount-label {
+            font-size: 16px;
+            color: #666;
+        }
+        .amount-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #e53935;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background-color: #1e88e5;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .submit-btn:hover {
+            background-color: #1565c0;
+        }
+        .submit-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .tips {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff3e0;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #f57c00;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 头部导航组件 -->
+        <header-component :active-nav="'doctor'"></header-component>
+        
+        <!-- 面包屑导航 -->
+        <div class="breadcrumb">
+            <a href="index.html">首页</a> > 
+            <a href="phone-consult.html">电话咨询</a> > 
+            <span>订单支付</span>
+        </div>
+        
+        <!-- 内容区域 -->
+        <div class="content">
+            <div class="pay-card">
+                <div class="card-title">确认支付</div>
+                
+                <!-- 订单信息 -->
+                <div class="order-info">
+                    <div class="info-row">
+                        <span class="info-label">订单编号</span>
+                        <span class="info-value">{{ orderNo }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">医生姓名</span>
+                        <span class="info-value">{{ doctorName }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">医生职称</span>
+                        <span class="info-value">{{ doctorTitle }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">所属科室</span>
+                        <span class="info-value">{{ doctorDepartment }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">咨询人</span>
+                        <span class="info-value">{{ patientName }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">联系电话</span>
+                        <span class="info-value">{{ patientPhone }}</span>
+                    </div>
+                </div>
+                
+                <!-- 支付方式 -->
+                <div class="pay-method">
+                    <div class="pay-method-title">选择支付方式</div>
+                    <div class="pay-options">
+                        <div 
+                            :class="['pay-option', 'alipay', {selected: payMethod === 'alipay'}]"
+                            @click="payMethod = 'alipay'"
+                        >
+                            <div class="icon">支</div>
+                            <div class="label">支付宝</div>
+                        </div>
+                        <div 
+                            :class="['pay-option', 'wechat', {selected: payMethod === 'wechat'}]"
+                            @click="payMethod = 'wechat'"
+                        >
+                            <div class="icon">微</div>
+                            <div class="label">微信支付</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 支付金额 -->
+                <div class="amount-section">
+                    <div class="amount-row">
+                        <span class="amount-label">支付金额</span>
+                        <span class="amount-value">¥{{ formatAmount(amount) }}</span>
+                    </div>
+                </div>
+                
+                <!-- 支付按钮 -->
+                <button class="submit-btn" @click="submitPay">
+                    确认支付
+                </button>
+                
+                <!-- 温馨提示 -->
+                <div class="tips">
+                    温馨提示：支付成功后，医生会在24小时内与您联系，请保持手机畅通。
+                </div>
+            </div>
+        </div>
+        
+        <!-- 底部页脚组件 -->
+        <footer-component></footer-component>
+    </div>
+    
+    <script src="component/Header.vue.js"></script>
+    <script src="component/Footer.vue.js"></script>
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                orderNo: '',
+                doctorName: '',
+                doctorTitle: '',
+                doctorDepartment: '',
+                patientName: '',
+                patientPhone: '',
+                amount: 0,
+                payMethod: 'alipay' // 默认选择支付宝
+            },
+            methods: {
+                getUrlParam(name) {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    return urlParams.get(name);
+                },
+                formatAmount(amount) {
+                    if (typeof amount === 'number') {
+                        return amount.toFixed(2);
+                    }
+                    return amount;
+                },
+                submitPay() {
+                    const params = new URLSearchParams({
+                        orderNo: this.orderNo,
+                        doctorName: this.doctorName,
+                        doctorTitle: this.doctorTitle,
+                        doctorDepartment: this.doctorDepartment,
+                        patientName: this.patientName,
+                        patientPhone: this.patientPhone,
+                        amount: this.amount,
+                        payMethod: this.payMethod === 'alipay' ? '支付宝' : '微信支付'
+                    });
+                    window.location.href = 'consult-success.html?' + params.toString();
+                }
+            },
+            mounted() {
+                this.orderNo = 'CONSULT' + Date.now() + 'A26';
+                this.doctorName = '张明远';
+                this.doctorTitle = '主任医师';
+                this.doctorDepartment = '心内科';
+                this.patientName = '李小明';
+                this.patientPhone = '138****5678';
+                this.amount = 100.00;
+            }
+        });
+    </script>
+</body>
+</html>

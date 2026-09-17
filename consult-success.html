@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>咨询成功 - 健康之路在线医疗</title>
+    <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+        }
+        /* 内容区域 */
+        .content {
+            width: 600px;
+            margin: 50px auto;
+            text-align: center;
+        }
+        /* 成功图标 */
+        .success-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 30px;
+            background-color: #4caf50;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            color: white;
+            animation: bounce 0.6s;
+        }
+        @keyframes bounce {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        /* 成功标题 */
+        .success-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .success-desc {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 40px;
+        }
+        /* 信息卡片 */
+        .info-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            text-align: left;
+            margin-bottom: 30px;
+        }
+        .info-section {
+            margin-bottom: 25px;
+        }
+        .info-section:last-child {
+            margin-bottom: 0;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e3f2fd;
+            position: relative;
+        }
+        .section-title::before {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 60px;
+            height: 2px;
+            background-color: #1e88e5;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px dashed #eee;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            color: #999;
+            font-size: 14px;
+        }
+        .info-value {
+            color: #333;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        /* 操作按钮 */
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        .btn {
+            padding: 12px 35px;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+        .btn-primary {
+            background-color: #1e88e5;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #1565c0;
+        }
+        .btn-secondary {
+            background-color: #f5f5f5;
+            color: #666;
+        }
+        .btn-secondary:hover {
+            background-color: #eee;
+        }
+        /* 温馨提示 */
+        .tips {
+            background-color: #fff3e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: left;
+        }
+        .tips-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #f57c00;
+            margin-bottom: 10px;
+        }
+        .tips-content {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.8;
+        }
+    </style>
+    <script src="component/Header.vue.js"></script>
+    <script src="component/Footer.vue.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航 -->
+        <header-component :active-nav="'doctor'"></header-component>
+
+        <!-- 内容区域 -->
+        <div class="content">
+            <!-- 成功图标 -->
+            <div class="success-icon">✓</div>
+            
+            <!-- 成功标题 -->
+            <div class="success-title">支付成功！</div>
+            <div class="success-desc">感谢您的咨询，医生会在24小时内与您联系</div>
+
+            <!-- 信息卡片 -->
+            <div class="info-card">
+                <!-- 订单信息 -->
+                <div class="info-section">
+                    <div class="section-title">订单信息</div>
+                    <div class="info-row">
+                        <span class="info-label">订单编号</span>
+                        <span class="info-value">{{ orderNo }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">支付方式</span>
+                        <span class="info-value">{{ payMethod }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">支付金额</span>
+                        <span class="info-value" style="color: #e53935; font-weight: bold; font-size: 16px;">¥{{ formatAmount(amount) }}</span>
+                    </div>
+                </div>
+
+                <!-- 医生信息 -->
+                <div class="info-section">
+                    <div class="section-title">咨询医生</div>
+                    <div class="info-row">
+                        <span class="info-label">医生姓名</span>
+                        <span class="info-value">{{ doctorName }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">医生职称</span>
+                        <span class="info-value">{{ doctorTitle }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">所属科室</span>
+                        <span class="info-value">{{ doctorDepartment }}</span>
+                    </div>
+                </div>
+
+                <!-- 咨询人信息 -->
+                <div class="info-section">
+                    <div class="section-title">咨询人信息</div>
+                    <div class="info-row">
+                        <span class="info-label">咨询人姓名</span>
+                        <span class="info-value">{{ patientName }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">联系电话</span>
+                        <span class="info-value">{{ patientPhone }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 温馨提示 -->
+            <div class="tips">
+                <div class="tips-title">温馨提示</div>
+                <div class="tips-content">
+                    医生会在24小时内通过您留下的联系电话与您联系，请保持手机畅通。如有特殊情况需要改期，请提前联系客服。
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="action-buttons">
+                <button class="btn btn-secondary" @click="goBack">返回首页</button>
+                <button class="btn btn-primary" @click="goToConsult">查看咨询记录</button>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer-component></footer-component>
+    </div>
+
+    <script>
+        // 主应用
+        new Vue({
+            el: '#app',
+            data: {
+                orderNo: 'CONSULT20260625A26',
+                doctorName: '张明远',
+                doctorTitle: '主任医师',
+                doctorDepartment: '心内科',
+                patientName: '李小明',
+                patientPhone: '138****5678',
+                amount: 100.00,
+                payMethod: '支付宝'
+            },
+            methods: {
+                // 格式化金额
+                formatAmount(amount) {
+                    return amount.toFixed(2);
+                },
+                // 返回首页
+                goBack() {
+                    window.location.href = 'index.html';
+                },
+                // 查看咨询记录
+                goToConsult() {
+                    window.location.href = 'my-consult.html';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

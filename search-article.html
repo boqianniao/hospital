@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>搜索健康科普 - 健康之路在线医疗</title>
+    <script src="js/vue.js"></script>
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+        }
+        /* 内容区域 */
+        .content {
+            width: 1200px;
+            margin: 30px auto;
+        }
+        /* 搜索提示区域 */
+        .section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .search-tip {
+            font-size: 14px;
+            color: #666;
+        }
+        .search-tip strong {
+            color: #1e88e5;
+        }
+        /* 选项卡 */
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid #e8eef3;
+            margin-bottom: 20px;
+        }
+        .tab-item {
+            padding: 12px 30px;
+            font-size: 15px;
+            color: #666;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s;
+        }
+        .tab-item:hover {
+            color: #1e88e5;
+        }
+        .tab-item.active {
+            color: #1e88e5;
+            font-weight: bold;
+        }
+        .tab-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #1e88e5;
+        }
+        /* 文章列表 - 与 article.html 一致 */
+        .article-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .article-item {
+            display: flex;
+            flex-direction: row;
+            padding: 15px;
+            background-color: #fafbfc;
+            border-radius: 8px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            border: 1px solid #e8eef3;
+            box-sizing: border-box;
+            width: 100%;
+            overflow: hidden;
+        }
+        .article-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(30, 136, 229, 0.15);
+            border-color: #1e88e5;
+        }
+        .article-item img {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        .article-item .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            margin: 0;
+            padding: 0;
+        }
+        .article-item h3 {
+            color: #333;
+            font-size: 17px;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        .article-item p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 10px;
+        }
+        .article-item .meta {
+            color: #999;
+            font-size: 13px;
+            display: flex;
+            gap: 20px;
+        }
+        .article-item .meta span {
+            display: flex;
+            align-items: center;
+        }
+        .article-item .category-tag {
+            background-color: #e3f2fd;
+            color: #1e88e5;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 0;
+            color: #999;
+        }
+        .empty-state p {
+            font-size: 16px;
+        }
+        /* 分页 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        .pagination button {
+            padding: 8px 16px;
+            border: 1px solid #e8eef3;
+            background-color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+            transition: all 0.3s;
+        }
+        .pagination button:hover:not(:disabled) {
+            border-color: #1e88e5;
+            color: #1e88e5;
+        }
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .pagination .page-number {
+            display: flex;
+            gap: 5px;
+        }
+        .pagination .page-btn {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+        }
+        .pagination .page-btn.active {
+            background-color: #1e88e5;
+            color: white;
+            border-color: #1e88e5;
+        }
+        .pagination .page-info {
+            margin-left: 15px;
+            color: #999;
+            font-size: 14px;
+        }
+        /* 页脚 */
+        .footer {
+            background-color: #1e88e5;
+            color: white;
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+        .footer-content {
+            width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        .footer-section h4 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #bbdefb;
+        }
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+        .footer-section ul li a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .footer-section ul li a:hover {
+            color: white;
+        }
+        .copyright {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+        }
+    </style>
+    <script src="component/Header.vue.js"></script>
+    <script src="component/Footer.vue.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航 -->
+        <header-component :active-nav="''"></header-component>
+
+        <!-- 内容区域 -->
+        <div class="content">
+            <!-- 搜索提示 -->
+            <div class="section">
+                <div v-if="keyword" class="search-tip">
+                    搜索关键词：<strong>{{ keyword }}</strong>，共找到 <strong>{{ total }}</strong> 个健康科普
+                </div>
+                <div v-else class="search-tip">
+                    请在顶部搜索框输入关键词进行搜索
+                </div>
+            </div>
+
+            <!-- 文章列表 -->
+            <div class="section">
+                <!-- 选项卡 -->
+                <div class="tabs">
+                    <div 
+                        v-for="tab in tabs" 
+                        :key="tab.value"
+                        :class="['tab-item', {active: currentTab === tab.value}]"
+                        @click="switchTab(tab.value)"
+                    >
+                        {{ tab.name }}
+                    </div>
+                </div>
+
+                <div v-if="articles.length > 0" class="article-list">
+                    <div 
+                        v-for="article in currentPageArticles" 
+                        :key="article.id" 
+                        class="article-item"
+                        @click="goToDetail(article.id)"
+                    >
+                        <img :src="article.image" :alt="article.title">
+                        <div class="content">
+                            <h3>{{ article.title }}</h3>
+                            <p>{{ article.summary }}</p>
+                            <div class="meta">
+                                <span class="category-tag">{{ article.subCategory }}</span>
+                                <span>发布时间：{{ article.date }}</span>
+                                <span>阅读量：{{ article.views }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div v-else class="empty-state">
+                    <p>未找到相关健康科普</p>
+                </div>
+
+                <!-- 分页 -->
+                <div v-if="totalPages > 1" class="pagination">
+                    <button @click="prevPage" :disabled="currentPage === 1">上一页</button>
+                    <div class="page-number">
+                        <button 
+                            v-for="page in visiblePages" 
+                            :key="page" 
+                            :class="['page-btn', {active: currentPage === page}]"
+                            @click="goToPage(page)"
+                        >
+                            {{ page }}
+                        </button>
+                    </div>
+                    <button @click="nextPage" :disabled="currentPage === totalPages">下一页</button>
+                    <span class="page-info">
+                        第 {{ currentPage }} / {{ totalPages }} 页，共 {{ total }} 条
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer-component></footer-component>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                keyword: '',
+                currentTab: 'article',
+                tabs: [
+                    { name: '医院', value: 'hospital' },
+                    { name: '医生', value: 'doctor' },
+                    { name: '疾病', value: 'disease' },
+                    { name: '健康科普', value: 'article' }
+                ],
+                currentPage: 1,
+                pageSize: 6,
+                articles: [],
+                allArticles: []
+            },
+            computed: {
+                totalPages() {
+                    return Math.ceil(this.articles.length / this.pageSize);
+                },
+                currentPageArticles() {
+                    const start = (this.currentPage - 1) * this.pageSize;
+                    const end = start + this.pageSize;
+                    return this.articles.slice(start, end);
+                },
+                visiblePages() {
+                    const pages = [];
+                    const total = this.totalPages;
+                    const current = this.currentPage;
+                    
+                    if (total <= 5) {
+                        for (let i = 1; i <= total; i++) pages.push(i);
+                    } else {
+                        if (current <= 3) {
+                            pages.push(1, 2, 3, 4, 5);
+                        } else if (current >= total - 2) {
+                            pages.push(total - 4, total - 3, total - 2, total - 1, total);
+                        } else {
+                            pages.push(current - 2, current - 1, current, current + 1, current + 2);
+                        }
+                    }
+                    return pages;
+                },
+                total() {
+                    return this.articles.length;
+                }
+            },
+            methods: {
+                getUrlParam(name) {
+                    const reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+                    const r = window.location.search.substr(1).match(reg);
+                    if (r != null) return decodeURIComponent(r[2]);
+                    return null;
+                },
+                switchTab(tabValue) {
+                    this.currentTab = tabValue;
+                    if (tabValue === 'hospital') {
+                        window.location.href = 'search-hospital.html?keyword=' + encodeURIComponent(this.keyword);
+                    } else if (tabValue === 'doctor') {
+                        window.location.href = 'search-doctor.html?keyword=' + encodeURIComponent(this.keyword);
+                    } else if (tabValue === 'disease') {
+                        window.location.href = 'search-disease.html?keyword=' + encodeURIComponent(this.keyword);
+                    } else if (tabValue === 'article') {
+                        window.location.href = 'search-article.html?keyword=' + encodeURIComponent(this.keyword);
+                    }
+                },
+                goToDetail(id) {
+                    window.location.href = 'article-detail.html?id=' + id;
+                },
+                searchArticles(keyword) {
+                    if (!keyword) {
+                        this.articles = this.allArticles;
+                        return;
+                    }
+                    keyword = keyword.toLowerCase();
+                    this.articles = this.allArticles.filter(a => 
+                        a.title.toLowerCase().includes(keyword) ||
+                        a.summary.toLowerCase().includes(keyword) ||
+                        a.category.toLowerCase().includes(keyword)
+                    );
+                    this.currentPage = 1;
+                },
+                prevPage() {
+                    if (this.currentPage > 1) {
+                        this.currentPage--;
+                    }
+                },
+                nextPage() {
+                    if (this.currentPage < this.totalPages) {
+                        this.currentPage++;
+                    }
+                },
+                goToPage(page) {
+                    this.currentPage = page;
+                },
+                loadArticles() {
+                    // 模拟文章数据，与 article.html 一致
+                    this.allArticles = [
+                        { id: 1, title: '春季养生指南：如何预防春季常见病', summary: '春季是万物复苏的季节，但也是各种疾病的高发期。本文为您介绍春季养生的要点和常见病的预防方法，帮助您和家人健康度过春天。', category: '科室名称', subCategory: '中医科', date: '2024-03-15', image: 'img/health_01.jpeg', views: 2356 },
+                        { id: 2, title: '高血压患者的日常饮食注意事项', summary: '高血压是一种常见的慢性病，合理的饮食对于控制血压至关重要。本文详细介绍高血压患者的饮食原则和禁忌，帮助您科学管理血压。', category: '科室名称', subCategory: '心内科', date: '2024-03-14', image: 'img/health_02.jpeg', views: 1890 },
+                        { id: 3, title: '儿童疫苗接种全攻略', summary: '疫苗接种是保护儿童健康的重要手段。本文为家长们整理了儿童疫苗接种的时间表、注意事项和常见问题解答。', category: '科室名称', subCategory: '小儿内科', date: '2024-03-13', image: 'img/health_03.jpeg', views: 3201 },
+                        { id: 4, title: '上班族如何预防颈椎病', summary: '长时间坐在电脑前工作的上班族，颈椎健康问题日益突出。本文为您介绍简单有效的颈椎保健方法和日常锻炼建议。', category: '科室名称', subCategory: '骨科', date: '2024-03-12', image: 'img/health_01.jpeg', views: 4521 },
+                        { id: 5, title: '夏季清热解毒食谱推荐', summary: '炎炎夏日，容易上火中暑。本文为您推荐几款清热解毒的健康食谱，帮助您清凉度夏。', category: '科室名称', subCategory: '营养科', date: '2024-03-11', image: 'img/health_02.jpeg', views: 1567 },
+                        { id: 6, title: '如何改善睡眠质量', summary: '睡眠质量直接影响身体健康和工作效率。本文介绍几种科学改善睡眠的方法，帮助您拥有更好的睡眠。', category: '科室名称', subCategory: '神经内科', date: '2024-03-10', image: 'img/health_03.jpeg', views: 2876 },
+                        { id: 7, title: '糖尿病患者饮食指南', summary: '糖尿病是一组以高血糖为特征的代谢性疾病，饮食控制是糖尿病治疗的基础。本文详细介绍糖尿病患者的饮食原则。', category: '科室名称', subCategory: '内分泌科', date: '2024-03-09', image: 'img/health_01.jpeg', views: 1987 },
+                        { id: 8, title: '宝宝辅食添加的最佳时机', summary: '辅食添加是宝宝成长过程中的重要阶段，正确的添加时间和方法对宝宝的健康发育至关重要。', category: '科室名称', subCategory: '小儿内科', date: '2024-03-08', image: 'img/health_02.jpeg', views: 2134 },
+                        { id: 9, title: '办公室视力保护小妙招', summary: '长时间盯着电脑屏幕，容易导致视力下降。本文分享几个简单有效的视力保护方法。', category: '科室名称', subCategory: '眼科', date: '2024-03-07', image: 'img/health_03.jpeg', views: 1654 },
+                        { id: 10, title: '秋冬季节如何预防感冒', summary: '秋冬季节是感冒的高发期，了解感冒的预防措施对保护自己和家人健康很重要。', category: '科室名称', subCategory: '呼吸内科', date: '2024-03-06', image: 'img/health_01.jpeg', views: 3421 },
+                        { id: 11, title: '老年人冬季养生注意事项', summary: '冬季天气寒冷，老年人更容易出现健康问题。本文介绍老年人冬季养生的注意事项。', category: '科室名称', subCategory: '中医科', date: '2024-03-05', image: 'img/health_02.jpeg', views: 2087 },
+                        { id: 12, title: '如何识别和缓解焦虑情绪', summary: '现代生活中，焦虑已成为常见的心理问题。了解焦虑的表现和应对方法，有助于保持心理健康。', category: '科室名称', subCategory: '精神心理科', date: '2024-03-04', image: 'img/health_03.jpeg', views: 2567 }
+                    ];
+                    this.articles = [...this.allArticles];
+                }
+            },
+            mounted() {
+                this.keyword = this.getUrlParam('keyword') || '';
+                this.loadArticles();
+                if (this.keyword) {
+                    this.searchArticles(this.keyword);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

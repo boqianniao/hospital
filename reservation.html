@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>在线预约挂号 - 健康之路在线医疗</title>
+    <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+        }
+        /* 顶部导航 */
+        .header {
+            background: linear-gradient(135deg, #1e88e5 0%, #42a5f5 100%);
+            box-shadow: 0 2px 10px rgba(30, 136, 229, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-content {
+            width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+        }
+        .header .logo {
+            display: flex;
+            align-items: center;
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .header .nav {
+            display: flex;
+            gap: 5px;
+        }
+        .header .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 18px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            font-size: 15px;
+        }
+        .header .nav a:hover, .header .nav a.active {
+            background-color: #1565c0;
+        }
+        .header .search-box {
+            display: flex;
+            align-items: center;
+        }
+        .header .search-box input {
+            width: 300px;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px 0 0 4px;
+            font-size: 14px;
+            outline: none;
+        }
+        .header .search-box input:focus {
+            outline: none;
+            box-shadow: none;
+        }
+        .header .search-box button {
+            padding: 8px 20px;
+            border: none;
+            background-color: #1565c0;
+            color: white;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .header .auth {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .header .auth .login-btn, .header .auth .register-btn, .header .auth .user-info {
+            color: white;
+            text-decoration: none;
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .header .auth .login-btn {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .header .auth .register-btn {
+            background-color: white;
+            color: #1e88e5;
+        }
+        .header .auth .user-info {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        /* 面包屑导航 */
+        .breadcrumb {
+            width: 1200px;
+            margin: 20px auto;
+            font-size: 14px;
+            color: #666;
+        }
+        .breadcrumb a {
+            color: #1e88e5;
+            text-decoration: none;
+        }
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        /* 内容区域 */
+        .content {
+            width: 1200px;
+            margin: 0 auto 30px;
+        }
+        /* 预约表单 */
+        .reservation-form {
+            background-color: white;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .reservation-form .form-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e3f2fd;
+        }
+        /* 医生信息 */
+        .doctor-info {
+            display: flex;
+            gap: 25px;
+            padding: 20px;
+            background-color: #fafbfc;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 4px solid #1e88e5;
+        }
+        .doctor-info .avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #e3f2fd;
+            flex-shrink: 0;
+        }
+        .doctor-info .info {
+            flex: 1;
+        }
+        .doctor-info .name {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .doctor-info .title {
+            display: inline-block;
+            background-color: #e3f2fd;
+            color: #1e88e5;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+        .doctor-info .department, .doctor-info .hospital {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .doctor-info .specialty {
+            margin-bottom: 10px;
+        }
+        .doctor-info .specialty-label {
+            color: #999;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+        .doctor-info .specialty-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .doctor-info .specialty-tags .tag {
+            background-color: #fff3e0;
+            color: #f57c00;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        /* 表单组 */
+        .form-group {
+            margin-bottom: 25px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+        .form-group label span {
+            color: #f44336;
+            margin-right: 5px;
+        }
+        /* 日期选择 */
+        .date-selector {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .date-selector input[type="date"] {
+            padding: 10px 15px;
+            border: 1px solid #e8eef3;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #333;
+            background-color: #fafbfc;
+        }
+        .date-selector input[type="date"]:focus {
+            outline: none;
+            border-color: #1e88e5;
+        }
+        .selected-date {
+            font-size: 14px;
+            color: #666;
+            padding: 10px 15px;
+            background-color: #e3f2fd;
+            border-radius: 6px;
+        }
+        /* 号源信息 */
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 15px;
+        }
+        .time-slot {
+            padding: 15px 10px;
+            border: 2px solid #e8eef3;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: #fafbfc;
+        }
+        .time-slot:hover {
+            border-color: #1e88e5;
+        }
+        .time-slot.selected {
+            border-color: #1e88e5;
+            background-color: #f0f7ff;
+        }
+        .time-slot.unavailable {
+            border-color: #eee;
+            background-color: #fafafa;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .time-slot .time {
+            font-size: 15px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .time-slot .status {
+            font-size: 12px;
+            color: #999;
+        }
+        .time-slot.unavailable .status {
+            color: #ccc;
+        }
+        .time-slot.selected .status {
+            color: #1e88e5;
+        }
+        /* 就诊人选择 */
+        .patient-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            max-height: 100px;
+            overflow: hidden;
+            transition: max-height 0.3s;
+        }
+        .patient-selector.expanded {
+            max-height: 500px;
+        }
+        .patient-card {
+            flex: 0 0 calc(33.333% - 8px);
+            min-width: 280px;
+            padding: 15px;
+            border: 2px solid #e8eef3;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: #fafbfc;
+        }
+        .patient-card:hover, .patient-card.selected {
+            border-color: #1e88e5;
+            background-color: #f0f7ff;
+        }
+        .patient-card.add-patient {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100px;
+            border-style: dashed;
+            color: #999;
+        }
+        .patient-card.add-patient img {
+            width: 30px;
+            height: 30px;
+            margin-bottom: 8px;
+        }
+        .patient-card.add-patient:hover {
+            border-color: #1e88e5;
+            color: #1e88e5;
+        }
+        .patient-card .patient-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .patient-card .patient-id {
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 3px;
+        }
+        .patient-card .patient-phone {
+            font-size: 13px;
+            color: #666;
+        }
+        .toggle-patients {
+            margin-top: 12px;
+            color: #1e88e5;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+        }
+        .toggle-patients img {
+            width: 16px;
+            height: 16px;
+            margin-left: 5px;
+            transition: transform 0.3s;
+        }
+        .toggle-patients.expanded img {
+            transform: rotate(180deg);
+        }
+        /* 就诊须知 */
+        .notice {
+            background-color: #fff3e0;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #f57c00;
+        }
+        .notice-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #f57c00;
+            margin-bottom: 15px;
+        }
+        .notice-content {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.8;
+        }
+        .notice-content ol {
+            padding-left: 20px;
+            margin: 0;
+        }
+        .notice-content li {
+            margin-bottom: 10px;
+        }
+        .notice-content li:last-child {
+            margin-bottom: 0;
+        }
+        /* 确认按钮 */
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background-color: #1e88e5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .submit-btn:hover {
+            background-color: #1565c0;
+        }
+        .submit-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        /* 页脚 */
+        .footer {
+            background-color: #1e88e5;
+            color: white;
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+        .footer-content {
+            width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        .footer-section h4 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #bbdefb;
+        }
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+        .footer-section ul li a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+        .footer-section ul li a:hover {
+            color: white;
+        }
+        .copyright {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+        }
+        /* 新增就诊人弹窗 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal {
+            background-color: white;
+            border-radius: 8px;
+            width: 450px;
+            padding: 30px;
+            transform: translateY(-20px);
+            transition: transform 0.3s;
+        }
+        .modal-overlay.show .modal {
+            transform: translateY(0);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .modal-close {
+            width: 30px;
+            height: 30px;
+            border: none;
+            background-color: #f5f5f5;
+            border-radius: 50%;
+            font-size: 20px;
+            color: #999;
+            cursor: pointer;
+        }
+        .modal-close:hover {
+            background-color: #eee;
+        }
+        .modal-footer {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            justify-content: flex-end;
+        }
+        .modal-btn {
+            padding: 10px 25px;
+            border-radius: 6px;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .modal-btn.cancel {
+            background-color: #f5f5f5;
+            color: #666;
+        }
+        .modal-btn.cancel:hover {
+            background-color: #eee;
+        }
+        .modal-btn.confirm {
+            background-color: #1e88e5;
+            color: white;
+        }
+        .modal-btn.confirm:hover {
+            background-color: #1565c0;
+        }
+        /* 表单输入 */
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e8eef3;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #333;
+            transition: border-color 0.3s;
+            background-color: #fafbfc;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #1e88e5;
+            background-color: white;
+        }
+    </style>
+    <script src="component/Header.vue.js"></script>
+    <script src="component/Footer.vue.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航 -->
+        <header-component :active-nav="'doctor'"></header-component>
+
+        <!-- 面包屑导航 -->
+        <div class="breadcrumb">
+            <a href="index.html">首页</a> > 
+            <a href="doctor.html">找医生</a> > 
+            <span>在线预约挂号</span>
+        </div>
+
+        <!-- 内容区域 -->
+        <div class="content">
+            <div class="reservation-form">
+                <div class="form-title">在线预约挂号</div>
+
+                <!-- 医生信息 -->
+                <div v-if="doctor" class="doctor-info">
+                    <img :src="doctor.avatar" :alt="doctor.name" class="avatar">
+                    <div class="info">
+                        <div class="name">{{ doctor.name }}</div>
+                        <span class="title">{{ doctor.title }}</span>
+                        <div class="department">所属科室：{{ doctor.department }}</div>
+                        <div class="hospital">所在医院：{{ doctor.hospital }}</div>
+                        <div class="hospital">挂号费用：<span style="color: #f44336; font-weight: bold; font-size: 18px;">¥80</span></div>
+                        <div class="specialty">
+                            <div class="specialty-label">擅长领域：</div>
+                            <div class="specialty-tags">
+                                <span v-for="tag in doctor.tags" :key="tag" class="tag">{{ tag }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 预约日期 -->
+                <div class="form-group">
+                    <label><span>*</span>预约日期</label>
+                    <div class="date-selector">
+                        <div v-if="selectedDate" class="selected-date">
+                            已选择：{{ formatDate(selectedDate) }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 号源信息 -->
+                <div class="form-group">
+                    <label><span>*</span>选择时间段</label>
+                    <div class="time-slots">
+                        <div 
+                            v-for="slot in timeSlots" 
+                            :key="slot.time"
+                            :class="['time-slot', {selected: selectedTime === slot.time, unavailable: !slot.available}]"
+                            @click="slot.available && selectTime(slot.time)"
+                        >
+                            <div class="time">{{ slot.time }}</div>
+                            <div class="status">{{ slot.available ? '可预约' : '已约满' }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 就诊人选择 -->
+                <div class="form-group">
+                    <label><span>*</span>选择就诊人</label>
+                    <div :class="['patient-selector', {expanded: showAllPatients}]">
+                        <div 
+                            v-for="patient in patients" 
+                            :key="patient.id"
+                            :class="['patient-card', {selected: selectedPatientId === patient.id}]"
+                            @click="selectPatient(patient.id)"
+                        >
+                            <div class="patient-name">{{ patient.name }}</div>
+                            <div class="patient-id">{{ patient.idCard }}</div>
+                            <div class="patient-phone">{{ patient.phone }}</div>
+                        </div>
+                        <div class="patient-card add-patient" @click="openAddPatient">
+                            <img src="img/icon-add.png" alt="添加就诊人">
+                            <span>新增就诊人</span>
+                        </div>
+                    </div>
+                    <div 
+                        v-if="patients.length > 3" 
+                        :class="['toggle-patients', {expanded: showAllPatients}]"
+                        @click="showAllPatients = !showAllPatients"
+                    >
+                        {{ showAllPatients ? '收起' : '展开更多' }}
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231e88e5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E" />
+                    </div>
+                </div>
+
+                <!-- 就诊须知 -->
+                <div class="notice">
+                    <div class="notice-title">就诊须知</div>
+                    <div class="notice-content">
+                        <ol>
+                            <li>儿童预约规则：无户口本的儿童，可填写大人的身份证。(就诊前需在医院窗口完成监护人二代身份证实名验证)</li>
+                            <li>取号时间：就诊前半小时持相对应就诊卡到相应科室刷卡报道</li>
+                            <li>取号地点：就诊当日持相应就诊卡到相应科室刷卡报道</li>
+                            <li>退号时间：就诊日6：00（上午号源）/就诊日12：00（下午号源）前到【个人中心】自行取消预约挂号，号费原路返还。如超时请在就诊当日到门诊一楼门诊事务办理处退号。</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- 确认按钮 -->
+                <button 
+                    class="submit-btn" 
+                    :disabled="!canSubmit"
+                    @click="submitForm"
+                >
+                    确认预约
+                </button>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer-component></footer-component>
+
+        <!-- 新增就诊人弹窗 -->
+        <div :class="['modal-overlay', {show: showAddModal}]" @click.self="closeAddPatient">
+            <div class="modal">
+                <div class="modal-header">
+                    <div class="modal-title">新增就诊人</div>
+                    <button class="modal-close" @click="closeAddPatient">×</button>
+                </div>
+                <div class="form-group">
+                    <label><span>*</span>姓名</label>
+                    <input v-model="newPatient.name" type="text" class="form-control" placeholder="请输入姓名">
+                </div>
+                <div class="form-group">
+                    <label><span>*</span>身份证号</label>
+                    <input v-model="newPatient.idCard" type="text" class="form-control" placeholder="请输入身份证号">
+                </div>
+                <div class="form-group">
+                    <label><span>*</span>手机号</label>
+                    <input v-model="newPatient.phone" type="tel" class="form-control" placeholder="请输入手机号">
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn cancel" @click="closeAddPatient">取消</button>
+                    <button class="modal-btn confirm" @click="addPatient">确认添加</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Header和Footer组件已经在外部引入
+
+        // 主应用
+        new Vue({
+            el: '#app',
+            data: {
+                // 医生信息
+                doctor: {
+                    id: 1,
+                    name: '张明远',
+                    department: '心内科',
+                    hospital: '北京协和医院',
+                    avatar: 'img/doctor-male-doc.jpg',
+                    title: '主任医师',
+                    tags: ['冠心病', '高血压', '心律失常', '心肌病']
+                },
+                // 预约日期
+                selectedDate: '',
+                minDate: '',
+                // 时间段
+                timeSlots: [
+                    { time: '08:00-09:00', available: true },
+                    { time: '09:00-10:00', available: true },
+                    { time: '10:00-11:00', available: false },
+                    { time: '14:00-15:00', available: true },
+                    { time: '15:00-16:00', available: true },
+                    { time: '16:00-17:00', available: true }
+                ],
+                selectedTime: '',
+                // 就诊人
+                patients: [
+                    { id: 1, name: '张三', idCard: '1101011990****1234', phone: '138****1234' },
+                    { id: 2, name: '李四', idCard: '1101021985****5678', phone: '139****5678' },
+                    { id: 3, name: '王五', idCard: '1101031995****9012', phone: '137****9012' },
+                    { id: 4, name: '赵六', idCard: '1101041988****3456', phone: '136****3456' }
+                ],
+                selectedPatientId: null,
+                showAllPatients: false,
+                showAddModal: false,
+                newPatient: {
+                    name: '',
+                    idCard: '',
+                    phone: ''
+                }
+            },
+            computed: {
+                canSubmit() {
+                    return this.selectedDate && this.selectedTime && this.selectedPatientId;
+                }
+            },
+            methods: {
+                // 获取URL参数
+                getUrlParam(name) {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    return urlParams.get(name) || '';
+                },
+                // 初始化日期
+                initDate() {
+                    const today = new Date();
+                    const yyyy = today.getFullYear();
+                    const mm = String(today.getMonth() + 1).padStart(2, '0');
+                    const dd = String(today.getDate()).padStart(2, '0');
+                    this.minDate = `${yyyy}-${mm}-${dd}`;
+                    
+                    // 从URL获取日期参数
+                    const dateParam = this.getUrlParam('date');
+                    if (dateParam) {
+                        this.selectedDate = dateParam;
+                    }
+                    
+                    // 从URL获取医生参数
+                    const doctorId = this.getUrlParam('doctorId');
+                    if (doctorId) {
+                        // 可根据医生ID加载对应医生信息
+                    }
+                },
+                // 格式化日期
+                formatDate(dateStr) {
+                    const date = new Date(dateStr);
+                    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+                    const month = date.getMonth() + 1;
+                    const day = date.getDate();
+                    const weekday = weekdays[date.getDay()];
+                    return `${month}月${day}日 ${weekday}`;
+                },
+                // 选择时间段
+                selectTime(time) {
+                    this.selectedTime = time;
+                },
+                // 选择就诊人
+                selectPatient(id) {
+                    this.selectedPatientId = id;
+                },
+                // 打开新增就诊人弹窗
+                openAddPatient() {
+                    this.newPatient = { name: '', idCard: '', phone: '' };
+                    this.showAddModal = true;
+                },
+                // 关闭弹窗
+                closeAddPatient() {
+                    this.showAddModal = false;
+                },
+                // 添加就诊人
+                addPatient() {
+                    if (!this.newPatient.name || !this.newPatient.idCard || !this.newPatient.phone) {
+                        alert('请填写完整的就诊人信息');
+                        return;
+                    }
+                    const newId = Math.max(...this.patients.map(p => p.id)) + 1;
+                    this.patients.push({
+                        id: newId,
+                        name: this.newPatient.name,
+                        idCard: this.newPatient.idCard,
+                        phone: this.newPatient.phone
+                    });
+                    this.selectedPatientId = newId;
+                    this.closeAddPatient();
+                },
+                // 生成订单号
+                generateOrderNo() {
+                    const timestamp = Date.now();
+                    const random = Math.random().toString(36).substring(2, 10).toUpperCase();
+                    return 'APPOINTMENT' + timestamp + random;
+                },
+                // 提交预约
+                submitForm() {
+                    if (!this.canSubmit) return;
+                    
+                    const orderNo = this.generateOrderNo();
+                    const params = new URLSearchParams({
+                        orderNo: orderNo,
+                        doctorName: this.doctor.name,
+                        doctorTitle: this.doctor.title,
+                        doctorDepartment: this.doctor.department,
+                        doctorHospital: this.doctor.hospital,
+                        date: this.selectedDate,
+                        time: this.selectedTime,
+                        patientName: this.patients.find(p => p.id === this.selectedPatientId).name,
+                        patientIdCard: this.patients.find(p => p.id === this.selectedPatientId).idCard,
+                        patientPhone: this.patients.find(p => p.id === this.selectedPatientId).phone
+                    });
+                    
+                    window.location.href = 'reservation-pay.html?' + params.toString();
+                }
+            },
+            mounted() {
+                this.initDate();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>我的咨询 - 健康之路在线医疗</title>
+    <script src="js/vue.js"></script>
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+        }
+        /* 内容区域 */
+        .content {
+            width: 1200px;
+            margin: 30px auto;
+            display: flex;
+            gap: 25px;
+        }
+        /* 左侧菜单 */
+        .sidebar {
+            width: 240px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .menu-group {
+            margin-bottom: 25px;
+        }
+        .menu-group:last-child {
+            margin-bottom: 0;
+        }
+        .menu-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 12px;
+            padding-left: 10px;
+            border-left: 4px solid #1e88e5;
+        }
+        .menu-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .menu-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #666;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        .menu-item:hover {
+            background-color: #f0f7ff;
+            color: #1e88e5;
+        }
+        .menu-item.active {
+            background-color: #e3f2fd;
+            color: #1e88e5;
+            font-weight: 500;
+        }
+        .menu-item::before {
+            content: '▶';
+            margin-right: 8px;
+            font-size: 10px;
+            color: #999;
+        }
+        .menu-item.active::before {
+            color: #1e88e5;
+        }
+        /* 右侧内容 */
+        .main-content {
+            flex: 1;
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .page-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e3f2fd;
+        }
+        /* 搜索区域 */
+        .search-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .search-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .search-item label {
+            font-size: 14px;
+            color: #666;
+        }
+        .search-item select, .search-item input {
+            padding: 8px 12px;
+            border: 1px solid #e8eef3;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #333;
+        }
+        .search-item button {
+            padding: 8px 20px;
+            background-color: #1e88e5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        .search-item button:hover {
+            background-color: #1565c0;
+        }
+        /* 订单列表 */
+        .order-list {
+            border: 1px solid #e8eef3;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .order-item {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .order-id {
+            font-size: 14px;
+            color: #999;
+        }
+        .order-status {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .order-status.pending {
+            color: #f57c00;
+        }
+        .order-status.completed {
+            color: #4caf50;
+        }
+        .order-status.cancelled {
+            color: #999;
+        }
+        .order-content {
+            display: flex;
+            gap: 20px;
+        }
+        .order-content img {
+            width: 100px;
+            height: 80px;
+            border-radius: 6px;
+            object-fit: cover;
+        }
+        .order-info {
+            flex: 1;
+        }
+        .hospital-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .doctor-info {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .appointment-time {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .patient-name {
+            font-size: 14px;
+            color: #666;
+        }
+        .order-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .order-footer button {
+            padding: 6px 15px;
+            border: 1px solid #e8eef3;
+            background-color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #666;
+            transition: all 0.3s;
+        }
+        .order-footer button:hover {
+            border-color: #1e88e5;
+            color: #1e88e5;
+        }
+        /* 分页 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        .pagination button {
+            padding: 8px 16px;
+            border: 1px solid #e8eef3;
+            background-color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+        }
+        .pagination button:hover:not(:disabled) {
+            border-color: #1e88e5;
+            color: #1e88e5;
+        }
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .pagination .page-number {
+            display: flex;
+            gap: 5px;
+        }
+        .pagination .page-btn {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+        }
+        .pagination .page-btn.active {
+            background-color: #1e88e5;
+            color: white;
+            border-color: #1e88e5;
+        }
+        .pagination .page-info {
+            margin-left: 15px;
+            color: #999;
+            font-size: 14px;
+        }
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 80px 0;
+            color: #999;
+        }
+        /* 页脚 */
+        .footer {
+            background-color: #1e88e5;
+            color: white;
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+        .footer-content {
+            width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        .footer-section h4 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #bbdefb;
+        }
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+        .footer-section ul li a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .footer-section ul li a:hover {
+            color: white;
+        }
+        .copyright {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+        }
+        /* 评价对话框遮罩 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        /* 评价对话框 */
+        .review-modal {
+            background-color: white;
+            border-radius: 10px;
+            width: 500px;
+            max-width: 90%;
+            overflow: hidden;
+        }
+        .modal-header {
+            padding: 20px;
+            background-color: #1e88e5;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-close {
+            cursor: pointer;
+            font-size: 20px;
+            line-height: 1;
+        }
+        .modal-body {
+            padding: 25px;
+        }
+        .review-info {
+            display: flex;
+            gap: 15px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .review-info img {
+            width: 80px;
+            height: 80px;
+            border-radius: 6px;
+            object-fit: cover;
+        }
+        .review-info-content {
+            flex: 1;
+        }
+        .review-doctor-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .review-doctor-title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .review-patient {
+            font-size: 14px;
+            color: #666;
+        }
+        .review-label {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .review-textarea {
+            width: 100%;
+            height: 120px;
+            padding: 12px;
+            border: 1px solid #e8eef3;
+            border-radius: 6px;
+            font-size: 14px;
+            resize: none;
+            margin-bottom: 20px;
+        }
+        .review-textarea:focus {
+            outline: none;
+            border-color: #1e88e5;
+        }
+        .modal-footer {
+            padding: 15px 25px;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .modal-footer button {
+            padding: 8px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-cancel {
+            border: 1px solid #e8eef3;
+            background-color: white;
+            color: #666;
+        }
+        .btn-cancel:hover {
+            border-color: #1e88e5;
+            color: #1e88e5;
+        }
+        .btn-submit {
+            background-color: #1e88e5;
+            color: white;
+            border: none;
+        }
+        .btn-submit:hover {
+            background-color: #1565c0;
+        }
+    </style>
+    <script src="component/Header.vue.js"></script>
+    <script src="component/Sidebar.vue.js"></script>
+    <script src="component/Footer.vue.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航 -->
+        <header-component :active-nav="''"></header-component>
+
+        <!-- 内容区域 -->
+        <div class="content">
+            <!-- 左侧菜单 -->
+            <sidebar-component 
+                :active-menu="activeMenu" 
+                @menu-change="handleMenuChange"
+            ></sidebar-component>
+
+            <!-- 右侧内容 -->
+            <div class="main-content">
+                <div class="page-title">我的咨询</div>
+                
+                <!-- 搜索条件 -->
+                <div class="search-bar">
+                    <div class="search-item">
+                        <label>时间段：</label>
+                        <select v-model="consultTimeRange">
+                            <option value="">全部时间</option>
+                            <option value="today">今天</option>
+                            <option value="week">本周</option>
+                            <option value="month">本月</option>
+                            <option value="year">本年</option>
+                        </select>
+                    </div>
+                    <div class="search-item">
+                        <label>订单状态：</label>
+                        <select v-model="consultStatus">
+                            <option value="">全部状态</option>
+                            <option value="pending">待接听</option>
+                            <option value="completed">已完成</option>
+                            <option value="cancelled">已取消</option>
+                        </select>
+                    </div>
+                    <div class="search-item">
+                        <button @click="searchConsults">查询</button>
+                    </div>
+                </div>
+
+                <!-- 电话咨询订单列表 -->
+                <div v-if="filteredConsults.length > 0" class="order-list">
+                    <div v-for="consult in currentPageConsults" :key="consult.id" class="order-item">
+                        <div class="order-header">
+                            <span class="order-id">订单号：{{ consult.orderNo }}</span>
+                            <span :class="['order-status', consult.status]">{{ getConsultStatusText(consult.status) }}</span>
+                        </div>
+                        <div class="order-content">
+                            <img :src="consult.doctorAvatar" :alt="consult.doctorName">
+                            <div class="order-info">
+                                <div class="hospital-name">{{ consult.doctorName }} - {{ consult.doctorTitle }}</div>
+                                <div class="doctor-info">所属科室：{{ consult.department }} - {{ consult.hospitalName }}</div>
+                                <div class="appointment-time">预约时间：{{ consult.appointmentTime }}</div>
+                                <div class="patient-name">咨询时长：{{ consult.duration }}分钟 | 费用：¥{{ consult.amount }}</div>
+                            </div>
+                        </div>
+                        <div class="order-footer">
+                            <button v-if="consult.status === 'pending'">取消预约</button>
+                            <button v-if="consult.status === 'completed'">再次咨询</button>
+                            <button 
+                                v-if="consult.status === 'completed' && !consult.hasReviewed" 
+                                @click="openReviewModal(consult)"
+                            >评价医生</button>
+                            <button>查看详情</button>
+                        </div>
+                    </div>
+                </div>
+                <div v-else class="empty-state">
+                    <p>暂无电话咨询订单</p>
+                </div>
+
+                <!-- 评价对话框 -->
+                <div v-if="showReviewModal" class="modal-overlay" @click.self="closeReviewModal">
+                    <div class="review-modal">
+                        <div class="modal-header">
+                            <span>评价医生</span>
+                            <span class="modal-close" @click="closeReviewModal">×</span>
+                        </div>
+                        <div class="modal-body">
+                            <div class="review-info">
+                                <img :src="currentReviewConsult.doctorAvatar" :alt="currentReviewConsult.doctorName">
+                                <div class="review-info-content">
+                                    <div class="review-doctor-name">{{ currentReviewConsult.doctorName }}</div>
+                                    <div class="review-doctor-title">{{ currentReviewConsult.doctorTitle }} - {{ currentReviewConsult.department }}</div>
+                                    <div class="review-patient">咨询时长：{{ currentReviewConsult.duration }}分钟</div>
+                                </div>
+                            </div>
+                            <label class="review-label">评价内容</label>
+                            <textarea 
+                                v-model="reviewContent" 
+                                class="review-textarea" 
+                                placeholder="请输入您对医生的评价..."
+                            ></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn-cancel" @click="closeReviewModal">取消</button>
+                            <button class="btn-submit" @click="submitReview">提交评价</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 分页 -->
+                <div v-if="filteredConsults.length > 0 && consultTotalPages > 1" class="pagination">
+                    <button @click="consultCurrentPage--" :disabled="consultCurrentPage === 1">上一页</button>
+                    <div class="page-number">
+                        <button 
+                            v-for="page in consultVisiblePages" 
+                            :key="page" 
+                            :class="['page-btn', {active: consultCurrentPage === page}]"
+                            @click="consultCurrentPage = page"
+                        >
+                            {{ page }}
+                        </button>
+                    </div>
+                    <button @click="consultCurrentPage++" :disabled="consultCurrentPage === consultTotalPages">下一页</button>
+                    <span class="page-info">第 {{ consultCurrentPage }} / {{ consultTotalPages }} 页，共 {{ filteredConsults.length }} 条</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer-component></footer-component>
+    </div>
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                activeMenu: 'myConsult',
+                consultTimeRange: '',
+                consultStatus: '',
+                consultCurrentPage: 1,
+                pageSize: 5,
+                consults: [],
+                // 评价相关
+                showReviewModal: false,
+                currentReviewConsult: {},
+                reviewContent: ''
+            },
+            computed: {
+                filteredConsults() {
+                    let result = this.consults;
+                    
+                    // 时间段筛选
+                    if (this.consultTimeRange) {
+                        const now = new Date();
+                        let startDate, endDate;
+                        
+                        switch (this.consultTimeRange) {
+                            case 'today':
+                                startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                                endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+                                break;
+                            case 'week':
+                                startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+                                endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+                                break;
+                            case 'month':
+                                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+                                break;
+                            case 'year':
+                                startDate = new Date(now.getFullYear(), 0, 1);
+                                endDate = new Date(now.getFullYear() + 1, 0, 1);
+                                break;
+                        }
+                        
+                        result = result.filter(consult => {
+                            const consultDate = new Date(consult.appointmentTime);
+                            return consultDate >= startDate && consultDate < endDate;
+                        });
+                    }
+                    
+                    // 订单状态筛选
+                    if (this.consultStatus) {
+                        result = result.filter(consult => consult.status === this.consultStatus);
+                    }
+                    
+                    return result;
+                },
+                consultTotalPages() {
+                    return Math.ceil(this.filteredConsults.length / this.pageSize);
+                },
+                currentPageConsults() {
+                    const start = (this.consultCurrentPage - 1) * this.pageSize;
+                    return this.filteredConsults.slice(start, start + this.pageSize);
+                },
+                consultVisiblePages() {
+                    const pages = [];
+                    const total = this.consultTotalPages;
+                    const current = this.consultCurrentPage;
+                    
+                    if (total <= 5) {
+                        for (let i = 1; i <= total; i++) pages.push(i);
+                    } else {
+                        if (current <= 3) {
+                            pages.push(1, 2, 3, 4, 5);
+                        } else if (current >= total - 2) {
+                            pages.push(total - 4, total - 3, total - 2, total - 1, total);
+                        } else {
+                            pages.push(current - 2, current - 1, current, current + 1, current + 2);
+                        }
+                    }
+                    return pages;
+                }
+            },
+            methods: {
+                handleMenuChange(menu) {
+                    this.activeMenu = menu;
+                    // 根据菜单跳转
+                    if (menu === 'myAppointment') {
+                        window.location.href = 'my-appointment.html';
+                    } else if (menu === 'myReviews') {
+                        window.location.href = 'my-reviews.html';
+                    } else if (menu === 'followHospital') {
+                        window.location.href = 'follow-hospital.html';
+                    } else if (menu === 'followDoctor') {
+                        window.location.href = 'follow-doctor.html';
+                    } else if (menu === 'followDisease') {
+                        window.location.href = 'follow-disease.html';
+                    } else if (menu === 'profile' || menu === 'personalInfo') {
+                        window.location.href = 'personal-info.html';
+                    } else if (menu === 'familyMembers') {
+                        window.location.href = 'family-members.html';
+                    } else if (menu === 'changePassword') {
+                        window.location.href = 'change-password.html';
+                    } else if (menu === 'myMessages') {
+                        window.location.href = 'my-messages.html';
+                    } else if (menu === 'myFeedback') {
+                        window.location.href = 'my-feedback.html';
+                    }
+                },
+                getConsultStatusText(status) {
+                    const statusMap = {
+                        pending: '待接听',
+                        completed: '已完成',
+                        cancelled: '已取消'
+                    };
+                    return statusMap[status] || status;
+                },
+                // 评价相关方法
+                openReviewModal(consult) {
+                    this.currentReviewConsult = consult;
+                    this.reviewContent = '';
+                    this.showReviewModal = true;
+                },
+                closeReviewModal() {
+                    this.showReviewModal = false;
+                    this.currentReviewConsult = {};
+                    this.reviewContent = '';
+                },
+                submitReview() {
+                    if (!this.reviewContent.trim()) {
+                        alert('请输入评价内容');
+                        return;
+                    }
+                    
+                    // 找到咨询订单并标记为已评价
+                    const consult = this.consults.find(c => c.id === this.currentReviewConsult.id);
+                    if (consult) {
+                        consult.hasReviewed = true;
+                    }
+                    
+                    alert('评价提交成功！');
+                    this.closeReviewModal();
+                },
+                searchConsults() {
+                    this.consultCurrentPage = 1;
+                },
+                loadConsults() {
+                    this.consults = [
+                        { 
+                            id: 1, 
+                            orderNo: 'DH20240315001', 
+                            doctorName: '张明远', 
+                            doctorTitle: '主任医师', 
+                            department: '心内科',
+                            hospitalName: '北京协和医院',
+                            doctorAvatar: 'img/doctor-male-doc.jpg',
+                            appointmentTime: '2024-03-20 10:00',
+                            duration: 30,
+                            amount: 199,
+                            status: 'pending',
+                            hasReviewed: false
+                        },
+                        { 
+                            id: 2, 
+                            orderNo: 'DH20240314002', 
+                            doctorName: '李秀华', 
+                            doctorTitle: '副主任医师', 
+                            department: '呼吸内科',
+                            hospitalName: '上海瑞金医院',
+                            doctorAvatar: 'img/doctor-female-doc.jpg',
+                            appointmentTime: '2024-03-18 15:30',
+                            duration: 20,
+                            amount: 149,
+                            status: 'pending',
+                            hasReviewed: false
+                        },
+                        { 
+                            id: 3, 
+                            orderNo: 'DH20240313003', 
+                            doctorName: '王建国', 
+                            doctorTitle: '主任医师', 
+                            department: '消化内科',
+                            hospitalName: '广州中山医院',
+                            doctorAvatar: 'img/doctor-male-doc.jpg',
+                            appointmentTime: '2024-03-15 09:00',
+                            duration: 30,
+                            amount: 199,
+                            status: 'completed',
+                            hasReviewed: false
+                        },
+                        { 
+                            id: 4, 
+                            orderNo: 'DH20240312004', 
+                            doctorName: '陈美玲', 
+                            doctorTitle: '主治医师', 
+                            department: '肾内科',
+                            hospitalName: '杭州浙一医院',
+                            doctorAvatar: 'img/doctor-female-doc.jpg',
+                            appointmentTime: '2024-03-12 14:00',
+                            duration: 20,
+                            amount: 149,
+                            status: 'completed',
+                            hasReviewed: true
+                        },
+                        { 
+                            id: 5, 
+                            orderNo: 'DH20240311005', 
+                            doctorName: '张伟民', 
+                            doctorTitle: '主任医师', 
+                            department: '内分泌科',
+                            hospitalName: '北京协和医院',
+                            doctorAvatar: 'img/doctor-male-doc.jpg',
+                            appointmentTime: '2024-03-10 11:00',
+                            duration: 30,
+                            amount: 199,
+                            status: 'cancelled',
+                            hasReviewed: false
+                        },
+                        { 
+                            id: 6, 
+                            orderNo: 'DH20240310006', 
+                            doctorName: '刘芳华', 
+                            doctorTitle: '副主任医师', 
+                            department: '血液科',
+                            hospitalName: '上海瑞金医院',
+                            doctorAvatar: 'img/doctor-female-doc.jpg',
+                            appointmentTime: '2024-03-08 16:00',
+                            duration: 20,
+                            amount: 149,
+                            status: 'completed',
+                            hasReviewed: false
+                        }
+                    ];
+                }
+            },
+            mounted() {
+                this.loadConsults();
+            }
+        });
+    </script>
+</body>
+</html>

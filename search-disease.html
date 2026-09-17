@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>搜索疾病 - 健康之路在线医疗</title>
+    <script src="js/vue.js"></script>
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+        }
+        /* 内容区域 */
+        .content {
+            width: 1200px;
+            margin: 30px auto;
+        }
+        /* 搜索提示区域 */
+        .section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .search-tip {
+            font-size: 14px;
+            color: #666;
+        }
+        .search-tip strong {
+            color: #1e88e5;
+        }
+        /* 选项卡 */
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid #e8eef3;
+            margin-bottom: 20px;
+        }
+        .tab-item {
+            padding: 12px 30px;
+            font-size: 15px;
+            color: #666;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s;
+        }
+        .tab-item:hover {
+            color: #1e88e5;
+        }
+        .tab-item.active {
+            color: #1e88e5;
+            font-weight: bold;
+        }
+        .tab-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #1e88e5;
+        }
+        /* 疾病列表 - 与 disease.html 一致 */
+        .disease-list {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .disease-item {
+            background-color: #fafbfc;
+            border-radius: 8px;
+            padding: 20px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            border: 1px solid #e8eef3;
+        }
+        .disease-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(30, 136, 229, 0.15);
+            border-color: #1e88e5;
+        }
+        .disease-item h3 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .disease-item .description {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-height: 42px;
+        }
+        .disease-item .tags {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .disease-item .tag {
+            background-color: #e3f2fd;
+            color: #1e88e5;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 0;
+            color: #999;
+        }
+        .empty-state p {
+            font-size: 16px;
+        }
+        /* 分页 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        .pagination button {
+            padding: 8px 16px;
+            border: 1px solid #e8eef3;
+            background-color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+            transition: all 0.3s;
+        }
+        .pagination button:hover:not(:disabled) {
+            border-color: #1e88e5;
+            color: #1e88e5;
+        }
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .pagination .page-number {
+            display: flex;
+            gap: 5px;
+        }
+        .pagination .page-btn {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+        }
+        .pagination .page-btn.active {
+            background-color: #1e88e5;
+            color: white;
+            border-color: #1e88e5;
+        }
+        .pagination .page-info {
+            margin-left: 15px;
+            color: #999;
+            font-size: 14px;
+        }
+        /* 页脚 */
+        .footer {
+            background-color: #1e88e5;
+            color: white;
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+        .footer-content {
+            width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        .footer-section h4 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #bbdefb;
+        }
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+        .footer-section ul li a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .footer-section ul li a:hover {
+            color: white;
+        }
+        .copyright {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+        }
+    </style>
+    <script src="component/Header.vue.js"></script>
+    <script src="component/Footer.vue.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航 -->
+        <header-component :active-nav="''"></header-component>
+
+        <!-- 内容区域 -->
+        <div class="content">
+            <!-- 搜索提示 -->
+            <div class="section">
+                <div v-if="keyword" class="search-tip">
+                    搜索关键词：<strong>{{ keyword }}</strong>，共找到 <strong>{{ total }}</strong> 个疾病
+                </div>
+                <div v-else class="search-tip">
+                    请在顶部搜索框输入关键词进行搜索
+                </div>
+            </div>
+
+            <!-- 疾病列表 -->
+            <div class="section">
+                <!-- 选项卡 -->
+                <div class="tabs">
+                    <div 
+                        v-for="tab in tabs" 
+                        :key="tab.value"
+                        :class="['tab-item', {active: currentTab === tab.value}]"
+                        @click="switchTab(tab.value)"
+                    >
+                        {{ tab.name }}
+                    </div>
+                </div>
+
+                <div v-if="diseases.length > 0" class="disease-list">
+                    <div 
+                        v-for="disease in currentPageDiseases" 
+                        :key="disease.id" 
+                        class="disease-item"
+                        @click="goToDetail(disease.id)"
+                    >
+                        <h3>{{ disease.name }}</h3>
+                        <div class="description">{{ disease.description }}</div>
+                    </div>
+                </div>
+                <div v-else class="empty-state">
+                    <p>未找到相关疾病</p>
+                </div>
+
+                <!-- 分页 -->
+                <div v-if="totalPages > 1" class="pagination">
+                    <button @click="prevPage" :disabled="currentPage === 1">上一页</button>
+                    <div class="page-number">
+                        <button 
+                            v-for="page in visiblePages" 
+                            :key="page" 
+                            :class="['page-btn', {active: currentPage === page}]"
+                            @click="goToPage(page)"
+                        >
+                            {{ page }}
+                        </button>
+                    </div>
+                    <button @click="nextPage" :disabled="currentPage === totalPages">下一页</button>
+                    <span class="page-info">
+                        第 {{ currentPage }} / {{ totalPages }} 页，共 {{ total }} 条
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer-component></footer-component>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                keyword: '',
+                currentTab: 'disease',
+                tabs: [
+                    { name: '医院', value: 'hospital' },
+                    { name: '医生', value: 'doctor' },
+                    { name: '疾病', value: 'disease' },
+                    { name: '健康科普', value: 'article' }
+                ],
+                currentPage: 1,
+                pageSize: 6,
+                diseases: [],
+                allDiseases: []
+            },
+            computed: {
+                totalPages() {
+                    return Math.ceil(this.diseases.length / this.pageSize);
+                },
+                currentPageDiseases() {
+                    const start = (this.currentPage - 1) * this.pageSize;
+                    const end = start + this.pageSize;
+                    return this.diseases.slice(start, end);
+                },
+                visiblePages() {
+                    const pages = [];
+                    const total = this.totalPages;
+                    const current = this.currentPage;
+                    
+                    if (total <= 5) {
+                        for (let i = 1; i <= total; i++) pages.push(i);
+                    } else {
+                        if (current <= 3) {
+                            pages.push(1, 2, 3, 4, 5);
+                        } else if (current >= total - 2) {
+                            pages.push(total - 4, total - 3, total - 2, total - 1, total);
+                        } else {
+                            pages.push(current - 2, current - 1, current, current + 1, current + 2);
+                        }
+                    }
+                    return pages;
+                },
+                total() {
+                    return this.diseases.length;
+                }
+            },
+            methods: {
+                getUrlParam(name) {
+                    const reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+                    const r = window.location.search.substr(1).match(reg);
+                    if (r != null) return decodeURIComponent(r[2]);
+                    return null;
+                },
+                switchTab(tabValue) {
+                    this.currentTab = tabValue;
+                    if (tabValue === 'hospital') {
+                        window.location.href = 'search-hospital.html?keyword=' + encodeURIComponent(this.keyword);
+                    } else if (tabValue === 'doctor') {
+                        window.location.href = 'search-doctor.html?keyword=' + encodeURIComponent(this.keyword);
+                    } else if (tabValue === 'disease') {
+                        window.location.href = 'search-disease.html?keyword=' + encodeURIComponent(this.keyword);
+                    } else if (tabValue === 'article') {
+                        window.location.href = 'search-article.html?keyword=' + encodeURIComponent(this.keyword);
+                    }
+                },
+                goToDetail(id) {
+                    window.location.href = 'disease-detail.html?id=' + id;
+                },
+                searchDiseases(keyword) {
+                    if (!keyword) {
+                        this.diseases = this.allDiseases;
+                        return;
+                    }
+                    keyword = keyword.toLowerCase();
+                    this.diseases = this.allDiseases.filter(d => 
+                        d.name.toLowerCase().includes(keyword) ||
+                        d.description.toLowerCase().includes(keyword) ||
+                        d.tags.some(tag => tag.toLowerCase().includes(keyword))
+                    );
+                    this.currentPage = 1;
+                },
+                prevPage() {
+                    if (this.currentPage > 1) {
+                        this.currentPage--;
+                    }
+                },
+                nextPage() {
+                    if (this.currentPage < this.totalPages) {
+                        this.currentPage++;
+                    }
+                },
+                goToPage(page) {
+                    this.currentPage = page;
+                },
+                loadDiseases() {
+                    // 模拟疾病数据，与 disease.html 一致
+                    this.allDiseases = [
+                        { id: 1, name: '冠心病', description: '冠状动脉粥样硬化性心脏病，是冠状动脉血管发生动脉粥样硬化病变而引起血管腔狭窄或阻塞，造成心肌缺血、缺氧或坏死而导致的心脏病。', tags: ['心血管疾病', '慢性病'] },
+                        { id: 2, name: '高血压', description: '动脉血压持续升高为主要表现的慢性疾病，常伴有心、脑、肾等器官的功能或器质性损害。', tags: ['心血管疾病', '慢性病'] },
+                        { id: 3, name: '心肌梗死', description: '冠状动脉急性、持续性缺血缺氧所引起的心肌坏死，临床上多有剧烈而持久的胸骨后疼痛。', tags: ['心血管疾病', '急症'] },
+                        { id: 4, name: '慢性支气管炎', description: '气管、支气管黏膜及其周围组织的慢性非特异性炎症，临床上以长期咳嗽、咳痰或伴有喘息为主要特征。', tags: ['呼吸系统疾病', '慢性病'] },
+                        { id: 5, name: '哮喘', description: '一种气道慢性炎症性疾病，主要特征包括气道变应性炎症、气道高反应性和可逆性气流受限。', tags: ['呼吸系统疾病', '过敏性疾病'] },
+                        { id: 6, name: '肺炎', description: '终末气道、肺泡和肺间质的炎症，可由病原微生物、理化因素、免疫损伤、过敏及药物所致。', tags: ['呼吸系统疾病', '感染性疾病'] },
+                        { id: 7, name: '胃溃疡', description: '胃黏膜发生的炎性缺损，病变穿透黏膜肌层，常发生于胃角、胃窦小弯和胃体小弯。', tags: ['消化系统疾病', '慢性病'] },
+                        { id: 8, name: '慢性胃炎', description: '胃黏膜的慢性炎症性病变，是消化系统常见病之一，发病率随年龄增长而升高。', tags: ['消化系统疾病', '慢性病'] },
+                        { id: 9, name: '肝硬化', description: '一种常见的慢性肝病，由一种或多种病因长期或反复作用形成的弥漫性肝损害。', tags: ['消化系统疾病', '慢性病'] },
+                        { id: 10, name: '慢性肾炎', description: '以蛋白尿、血尿、高血压、水肿为基本临床表现，起病方式各有不同，病情迁延，病变缓慢进展。', tags: ['泌尿系统疾病', '慢性病'] },
+                        { id: 11, name: '糖尿病', description: '一组以高血糖为特征的代谢性疾病，高血糖则是由于胰岛素分泌缺陷或其生物作用受损引起。', tags: ['内分泌疾病', '慢性病'] },
+                        { id: 12, name: '甲状腺功能亢进', description: '甲状腺合成释放过多的甲状腺激素，造成机体代谢亢进和交感神经兴奋，引起心悸、出汗、进食和便次增多。', tags: ['内分泌疾病', '自身免疫性疾病'] },
+                        { id: 13, name: '贫血', description: '人体外周血红细胞容量减少，低于正常范围下限的一种常见的临床症状。', tags: ['血液系统疾病', '常见病'] },
+                        { id: 14, name: '白血病', description: '造血干细胞的恶性克隆性疾病，克隆的白血病细胞增殖失控、分化障碍、凋亡受阻。', tags: ['血液系统疾病', '恶性肿瘤'] },
+                        { id: 15, name: '乳腺癌', description: '发生在乳腺腺上皮组织的恶性肿瘤，女性发病率较高，是女性常见的恶性肿瘤之一。', tags: ['肿瘤', '女性疾病'] },
+                        { id: 16, name: '宫颈癌', description: '发生在子宫颈部的恶性肿瘤，是女性生殖系统常见的恶性肿瘤之一。', tags: ['肿瘤', '女性疾病'] },
+                        { id: 17, name: '子宫肌瘤', description: '子宫平滑肌组织增生形成的良性肿瘤，是女性最常见的良性肿瘤。', tags: ['妇科疾病', '良性肿瘤'] },
+                        { id: 18, name: '小儿肺炎', description: '儿童时期常见的呼吸道感染性疾病，是导致儿童死亡的主要原因之一。', tags: ['儿科疾病', '呼吸系统疾病'] },
+                        { id: 19, name: '小儿腹泻', description: '儿童常见的消化道疾病，以大便次数增多和大便性状改变为特点。', tags: ['儿科疾病', '消化系统疾病'] },
+                        { id: 20, name: '骨折', description: '骨结构的连续性完全或部分断裂，多见于儿童及老年人，中青年人也时有发生。', tags: ['骨科疾病', '外伤性疾病'] },
+                        { id: 21, name: '骨质疏松', description: '一种以骨量低下、骨微结构损坏，导致骨脆性增加、易发生骨折为特征的全身性骨病。', tags: ['骨科疾病', '慢性病'] },
+                        { id: 22, name: '颈椎病', description: '颈椎间盘退行性改变及其继发性病理改变累及周围组织结构出现相应临床症状。', tags: ['骨科疾病', '退行性疾病'] },
+                        { id: 23, name: '腰椎间盘突出', description: '腰椎间盘发生退行性改变后，在外力作用下纤维环破裂，髓核突出压迫神经根。', tags: ['骨科疾病', '退行性疾病'] },
+                        { id: 24, name: '痛风', description: '由于嘌呤代谢紊乱和尿酸排泄障碍所致的一组异质性疾病，临床特点为高尿酸血症。', tags: ['风湿免疫疾病', '代谢性疾病'] },
+                        { id: 25, name: '类风湿性关节炎', description: '一种以对称性多关节炎为主要表现的慢性全身性自身免疫性疾病。', tags: ['风湿免疫疾病', '自身免疫性疾病'] },
+                        { id: 26, name: '银屑病', description: '一种常见的慢性复发性炎症性皮肤病，典型皮损为鳞屑性红斑。', tags: ['皮肤科疾病', '免疫性疾病'] },
+                        { id: 27, name: '白癜风', description: '一种常见的后天色素性皮肤病，表现为局限性或泛发性皮肤黏膜色素完全脱失。', tags: ['皮肤科疾病', '色素性疾病'] },
+                        { id: 28, name: '抑郁症', description: '以情绪低落、兴趣减退为核心症状的一种常见精神障碍，严重时可出现自杀行为。', tags: ['精神心理疾病', '情感障碍'] },
+                        { id: 29, name: '焦虑症', description: '以焦虑情绪体验为主要特征的神经症，表现为持续性紧张不安和过分担忧。', tags: ['精神心理疾病', '神经症'] },
+                        { id: 30, name: '阿尔茨海默病', description: '一种起病隐匿的进行性发展的神经系统退行性疾病，临床上以记忆障碍为首发症状。', tags: ['神经内科疾病', '退行性疾病'] }
+                    ];
+                    this.diseases = [...this.allDiseases];
+                }
+            },
+            mounted() {
+                this.keyword = this.getUrlParam('keyword') || '';
+                this.loadDiseases();
+                if (this.keyword) {
+                    this.searchDiseases(this.keyword);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

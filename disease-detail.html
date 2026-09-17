@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>疾病详情 - 健康之路在线医疗</title>
+    <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+        }
+        /* 面包屑导航 */
+        .breadcrumb {
+            width: 1200px;
+            margin: 20px auto;
+            font-size: 14px;
+            color: #666;
+        }
+        .breadcrumb a {
+            color: #1e88e5;
+            text-decoration: none;
+        }
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        /* 内容区域 */
+        .content {
+            width: 1200px;
+            margin: 0 auto 30px;
+        }
+        /* 科室路径 */
+        .department-path {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .department-path .path-title {
+            color: #999;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .department-path .path-value {
+            color: #1e88e5;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        /* 疾病详情卡片 */
+        .disease-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .disease-card .disease-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e3f2fd;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        /* 关注按钮 */
+        .follow-btn {
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            outline: none;
+        }
+        .follow-btn.follow {
+            background-color: #1e88e5;
+            color: white;
+        }
+        .follow-btn.follow:hover {
+            background-color: #1565c0;
+        }
+        .follow-btn.followed {
+            background-color: #f5f7fa;
+            color: #999;
+            border: 1px solid #e8eef3;
+        }
+        .disease-card .description {
+            font-size: 15px;
+            line-height: 1.8;
+            color: #666;
+            margin-bottom: 30px;
+            text-align: justify;
+        }
+        /* 信息列表 */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        .info-item {
+            background-color: #fafbfc;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #1e88e5;
+        }
+        .info-item .info-label {
+            color: #999;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .info-item .info-value {
+            color: #333;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        .info-item .info-value .tag {
+            display: inline-block;
+            background-color: #e3f2fd;
+            color: #1e88e5;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        /* 返回按钮 */
+        .back-btn {
+            display: inline-block;
+            padding: 10px 25px;
+            background-color: #1e88e5;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-top: 30px;
+            transition: background-color 0.3s;
+        }
+        .back-btn:hover {
+            background-color: #1565c0;
+        }
+        /* 页脚 */
+        .footer {
+            background-color: #1e88e5;
+            color: white;
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+        .footer-content {
+            width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        .footer-section h4 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #bbdefb;
+        }
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+        .footer-section ul li a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+        .footer-section ul li a:hover {
+            color: white;
+        }
+        .copyright {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+        }
+        /* 未找到提示 */
+        .not-found {
+            text-align: center;
+            padding: 80px 0;
+            color: #999;
+        }
+        .not-found p {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+    </style>
+    <script src="component/Header.vue.js"></script>
+    <script src="component/Footer.vue.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航 -->
+        <header-component :active-nav="'disease'"></header-component>
+
+        <!-- 面包屑导航 -->
+        <div class="breadcrumb">
+            <a href="index.html">首页</a> > 
+            <a href="disease.html">查疾病</a> > 
+            <span>{{ disease.name || '疾病详情' }}</span>
+        </div>
+
+        <!-- 内容区域 -->
+        <div v-if="disease" class="content">
+            <!-- 科室路径 -->
+            <div class="department-path">
+                <div class="path-title">所属科室</div>
+                <div class="path-value">{{ primaryDeptName }} / {{ secondaryDeptName }}</div>
+            </div>
+
+            <!-- 疾病详情 -->
+            <div class="disease-card">
+                <div class="disease-name">
+                    <span>{{ disease.name }}</span>
+                    <button 
+                        :class="['follow-btn', diseaseFollowed ? 'followed' : 'follow']"
+                        @click="toggleDiseaseFollow"
+                    >
+                        {{ diseaseFollowed ? '已关注(' + diseaseFollowCount + ')' : '关注' }}
+                    </button>
+                </div>
+                
+                <div class="description">{{ disease.description }}</div>
+
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">别名</div>
+                        <div class="info-value">{{ disease.alias }}</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">发病部位</div>
+                        <div class="info-value">
+                            <span v-for="site in disease.location" :key="site" class="tag">{{ site }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">治疗方法</div>
+                        <div class="info-value">
+                            <span v-for="method in disease.treatment" :key="method" class="tag">{{ method }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">常见症状</div>
+                        <div class="info-value">
+                            <span v-for="symptom in disease.symptoms" :key="symptom" class="tag">{{ symptom }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">治疗周期</div>
+                        <div class="info-value">{{ disease.treatmentPeriod }}</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">治愈率</div>
+                        <div class="info-value">{{ disease.cureRate }}</div>
+                    </div>
+                    
+                    <div class="info-item" style="grid-column: span 2;">
+                        <div class="info-label">临床检查</div>
+                        <div class="info-value">
+                            <span v-for="check in disease.examinations" :key="check" class="tag">{{ check }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <a href="disease.html" class="back-btn">返回疾病列表</a>
+            </div>
+        </div>
+
+        <!-- 未找到疾病 -->
+        <div v-else class="content not-found">
+            <p>未找到该疾病信息</p>
+            <a href="disease.html" class="back-btn">返回疾病列表</a>
+        </div>
+
+        <!-- 页脚 -->
+        <footer-component></footer-component>
+    </div>
+
+    <script>
+        // Header和Footer组件已经在外部引入
+
+        // 主应用
+        new Vue({
+            el: '#app',
+            data: {
+                diseaseId: null,
+                disease: null,
+                // 关注状态
+                diseaseFollowed: false,
+                diseaseFollowCount: 0,
+                // 科室数据
+                primaryDepartments: [
+                    { id: 1, name: '内科' },
+                    { id: 2, name: '外科' },
+                    { id: 3, name: '妇产科' },
+                    { id: 4, name: '儿科' },
+                    { id: 5, name: '骨科' },
+                    { id: 6, name: '神经科' },
+                    { id: 7, name: '皮肤科' },
+                    { id: 8, name: '眼科' },
+                    { id: 9, name: '耳鼻喉科' },
+                    { id: 10, name: '口腔科' }
+                ],
+                departments: {
+                    1: [
+                        { id: 11, name: '心内科', parentId: 1 },
+                        { id: 12, name: '呼吸内科', parentId: 1 },
+                        { id: 13, name: '消化内科', parentId: 1 },
+                        { id: 14, name: '肾内科', parentId: 1 },
+                        { id: 15, name: '内分泌科', parentId: 1 },
+                        { id: 16, name: '血液科', parentId: 1 }
+                    ],
+                    2: [
+                        { id: 21, name: '普外科', parentId: 2 },
+                        { id: 22, name: '骨科', parentId: 2 },
+                        { id: 23, name: '心胸外科', parentId: 2 },
+                        { id: 24, name: '神经外科', parentId: 2 },
+                        { id: 25, name: '泌尿外科', parentId: 2 },
+                        { id: 26, name: '肝胆外科', parentId: 2 }
+                    ],
+                    3: [
+                        { id: 31, name: '妇科', parentId: 3 },
+                        { id: 32, name: '产科', parentId: 3 },
+                        { id: 33, name: '生殖医学中心', parentId: 3 }
+                    ],
+                    4: [
+                        { id: 41, name: '小儿内科', parentId: 4 },
+                        { id: 42, name: '小儿外科', parentId: 4 },
+                        { id: 43, name: '新生儿科', parentId: 4 }
+                    ],
+                    5: [
+                        { id: 51, name: '创伤骨科', parentId: 5 },
+                        { id: 52, name: '关节外科', parentId: 5 },
+                        { id: 53, name: '脊柱外科', parentId: 5 },
+                        { id: 54, name: '运动医学科', parentId: 5 }
+                    ],
+                    6: [
+                        { id: 61, name: '神经内科', parentId: 6 },
+                        { id: 62, name: '神经外科', parentId: 6 }
+                    ],
+                    7: [
+                        { id: 71, name: '皮肤科', parentId: 7 }
+                    ],
+                    8: [
+                        { id: 81, name: '眼科', parentId: 8 }
+                    ],
+                    9: [
+                        { id: 91, name: '耳鼻喉科', parentId: 9 }
+                    ],
+                    10: [
+                        { id: 101, name: '口腔科', parentId: 10 }
+                    ]
+                },
+                // 疾病详情数据
+                diseases: [
+                    { id: 1, name: '冠心病', followCount: 5680, description: '冠状动脉粥样硬化性心脏病，是冠状动脉血管发生动脉粥样硬化病变而引起血管腔狭窄或阻塞，造成心肌缺血、缺氧或坏死而导致的心脏病。冠心病的危险因素包括高血压、高血脂、糖尿病、吸烟、肥胖、缺乏运动等。临床表现为心绞痛、心肌梗死、心律失常等。早期诊断和治疗可以有效降低死亡率。', alias: '冠状动脉粥样硬化性心脏病', location: ['心脏', '冠状动脉'], treatment: ['药物治疗', '介入治疗', '手术治疗'], symptoms: ['胸痛', '胸闷', '心悸', '呼吸困难'], treatmentPeriod: '长期治疗', cureRate: '85%', examinations: ['心电图', '心脏超声', '冠状动脉造影', '血液检查'], departmentId: 11 },
+                    { id: 2, name: '高血压', followCount: 8920, description: '动脉血压持续升高为主要表现的慢性疾病，常伴有心、脑、肾等器官的功能或器质性损害。高血压分为原发性高血压和继发性高血压。长期高血压可导致心脑血管疾病、肾脏疾病、眼部疾病等并发症。', alias: '血压高', location: ['全身'], treatment: ['药物治疗', '饮食调理', '运动锻炼'], symptoms: ['头痛', '头晕', '心悸', '失眠'], treatmentPeriod: '长期治疗', cureRate: '无法根治，需长期控制', examinations: ['血压测量', '血常规', '肾功能', '心电图'], departmentId: 11 },
+                    { id: 3, name: '心肌梗死', followCount: 3450, description: '冠状动脉急性、持续性缺血缺氧所引起的心肌坏死，临床上多有剧烈而持久的胸骨后疼痛。是一种危及生命的急症，需要立即就医。', alias: '心梗', location: ['心脏'], treatment: ['溶栓治疗', '介入治疗', '手术治疗'], symptoms: ['剧烈胸痛', '大汗', '呼吸困难', '恶心呕吐'], treatmentPeriod: '急性期约2-4周，长期康复', cureRate: '及时治疗约90%', examinations: ['心电图', '心肌酶谱', '冠状动脉造影'], departmentId: 11 },
+                    { id: 4, name: '慢性支气管炎', followCount: 2180, description: '气管、支气管黏膜及其周围组织的慢性非特异性炎症，临床上以长期咳嗽、咳痰或伴有喘息为主要特征。每年发病持续3个月，连续2年或以上。', alias: '慢支', location: ['气管', '支气管'], treatment: ['抗感染治疗', '止咳化痰', '氧疗'], symptoms: ['咳嗽', '咳痰', '喘息', '气短'], treatmentPeriod: '长期管理', cureRate: '无法根治，可控制症状', examinations: ['肺功能检查', '胸部X线', '血常规'], departmentId: 12 },
+                    { id: 5, name: '哮喘', followCount: 4320, description: '一种气道慢性炎症性疾病，主要特征包括气道变应性炎症、气道高反应性和可逆性气流受限。临床表现为反复发作的喘息、气急、胸闷或咳嗽等症状。', alias: '支气管哮喘', location: ['支气管', '气道'], treatment: ['吸入激素', '支气管扩张剂', '抗过敏治疗'], symptoms: ['喘息', '气急', '胸闷', '咳嗽'], treatmentPeriod: '长期管理', cureRate: '无法根治，可有效控制', examinations: ['肺功能检查', '过敏原检测', '支气管激发试验'], departmentId: 12 },
+                    { id: 6, name: '肺炎', followCount: 5180, description: '终末气道、肺泡和肺间质的炎症，可由病原微生物、理化因素、免疫损伤、过敏及药物所致。临床主要症状为发热、咳嗽、咳痰等。', alias: '肺部感染', location: ['肺'], treatment: ['抗感染治疗', '支持治疗', '对症治疗'], symptoms: ['发热', '咳嗽', '咳痰', '胸痛'], treatmentPeriod: '1-2周', cureRate: '多数可治愈', examinations: ['血常规', '胸部X线', '痰培养'], departmentId: 12 },
+                    { id: 7, name: '胃溃疡', followCount: 3650, description: '胃黏膜发生的炎性缺损，病变穿透黏膜肌层，常发生于胃角、胃窦小弯和胃体小弯。临床表现为周期性上腹部疼痛、反酸、嗳气等。', alias: '消化性溃疡', location: ['胃'], treatment: ['抑酸治疗', '保护胃黏膜', '根除幽门螺杆菌'], symptoms: ['上腹痛', '反酸', '嗳气', '恶心'], treatmentPeriod: '4-8周', cureRate: '90%以上', examinations: ['胃镜', '幽门螺杆菌检测', '血常规'], departmentId: 13 },
+                    { id: 8, name: '慢性胃炎', followCount: 4890, description: '胃黏膜的慢性炎症性病变，是消化系统常见病之一，发病率随年龄增长而升高。临床表现为上腹隐痛、食欲减退、餐后饱胀等。', alias: '胃炎', location: ['胃'], treatment: ['抑酸治疗', '胃黏膜保护', '饮食调理'], symptoms: ['上腹隐痛', '食欲减退', '餐后饱胀', '反酸'], treatmentPeriod: '长期调理', cureRate: '可缓解，易复发', examinations: ['胃镜', '幽门螺杆菌检测'], departmentId: 13 },
+                    { id: 9, name: '肝硬化', followCount: 2340, description: '一种常见的慢性肝病，由一种或多种病因长期或反复作用形成的弥漫性肝损害。早期症状不明显，后期出现肝功能减退和门静脉高压等表现。', alias: '肝硬变', location: ['肝脏'], treatment: ['病因治疗', '对症治疗', '肝移植'], symptoms: ['乏力', '食欲减退', '腹胀', '黄疸'], treatmentPeriod: '长期治疗', cureRate: '无法根治，可延缓进展', examinations: ['肝功能', '腹部超声', '肝穿刺'], departmentId: 13 },
+                    { id: 10, name: '慢性肾炎', followCount: 1860, description: '以蛋白尿、血尿、高血压、水肿为基本临床表现，起病方式各有不同，病情迁延，病变缓慢进展。最终将发展为慢性肾衰竭。', alias: '慢性肾小球肾炎', location: ['肾脏'], treatment: ['控制血压', '减少蛋白尿', '保护肾功能'], symptoms: ['蛋白尿', '血尿', '高血压', '水肿'], treatmentPeriod: '长期治疗', cureRate: '无法根治，可延缓进展', examinations: ['尿常规', '肾功能', '肾脏超声'], departmentId: 14 },
+                    { id: 11, name: '糖尿病', followCount: 9350, description: '一组以高血糖为特征的代谢性疾病，高血糖则是由于胰岛素分泌缺陷或其生物作用受损引起。长期高血糖可导致眼、肾、神经、心脏等多器官损害。', alias: '消渴', location: ['全身'], treatment: ['饮食控制', '运动锻炼', '药物治疗', '胰岛素治疗'], symptoms: ['多饮', '多食', '多尿', '体重减轻'], treatmentPeriod: '终身管理', cureRate: '无法根治，可控制', examinations: ['血糖检测', '糖化血红蛋白', '胰岛素功能'], departmentId: 15 },
+                    { id: 12, name: '甲状腺功能亢进', followCount: 2680, description: '甲状腺合成释放过多的甲状腺激素，造成机体代谢亢进和交感神经兴奋，引起心悸、出汗、进食和便次增多和体重减少等病症。', alias: '甲亢', location: ['甲状腺'], treatment: ['抗甲状腺药物', '放射性碘治疗', '手术治疗'], symptoms: ['心悸', '多汗', '消瘦', '手抖'], treatmentPeriod: '1-2年', cureRate: '80%以上', examinations: ['甲状腺功能', '甲状腺超声'], departmentId: 15 },
+                    { id: 13, name: '贫血', followCount: 3920, description: '人体外周血红细胞容量减少，低于正常范围下限的一种常见的临床症状。根据病因不同，分为缺铁性贫血、巨幼细胞性贫血等多种类型。', alias: '血虚', location: ['全身'], treatment: ['补充铁剂', '补充维生素B12', '治疗原发病'], symptoms: ['乏力', '面色苍白', '头晕', '心悸'], treatmentPeriod: '1-3个月', cureRate: '多数可治愈', examinations: ['血常规', '铁代谢检查', '骨髓穿刺'], departmentId: 16 },
+                    { id: 14, name: '白血病', followCount: 1450, description: '造血干细胞的恶性克隆性疾病，克隆的白血病细胞增殖失控、分化障碍、凋亡受阻，停滞在细胞发育的不同阶段。临床表现为贫血、出血、感染等。', alias: '血癌', location: ['骨髓', '血液'], treatment: ['化疗', '放疗', '造血干细胞移植'], symptoms: ['发热', '出血', '贫血', '骨痛'], treatmentPeriod: '长期治疗', cureRate: '视类型而定', examinations: ['血常规', '骨髓穿刺', '流式细胞术'], departmentId: 16 },
+                    { id: 15, name: '乳腺癌', followCount: 4280, description: '发生在乳腺腺上皮组织的恶性肿瘤，女性发病率较高，是女性常见的恶性肿瘤之一。早期发现、早期诊断、早期治疗是提高治愈率的关键。', alias: '乳癌', location: ['乳腺'], treatment: ['手术治疗', '化疗', '放疗', '内分泌治疗'], symptoms: ['乳房肿块', '乳头溢液', '乳房皮肤异常', '腋窝淋巴结肿大'], treatmentPeriod: '长期治疗', cureRate: '早期约90%', examinations: ['乳腺超声', '乳腺X线', '病理活检'], departmentId: 31 },
+                    { id: 16, name: '宫颈癌', followCount: 3560, description: '发生在子宫颈部的恶性肿瘤，是女性生殖系统常见的恶性肿瘤之一。人乳头瘤病毒（HPV）感染是主要危险因素。', alias: '子宫颈癌', location: ['子宫颈'], treatment: ['手术治疗', '放疗', '化疗'], symptoms: ['阴道出血', '阴道分泌物异常', '下腹部疼痛'], treatmentPeriod: '长期治疗', cureRate: '早期约80%', examinations: ['宫颈涂片', 'HPV检测', '阴道镜'], departmentId: 31 },
+                    { id: 17, name: '子宫肌瘤', followCount: 2890, description: '子宫平滑肌组织增生形成的良性肿瘤，是女性最常见的良性肿瘤。多数患者无症状，少数表现为月经异常、腹部肿块等。', alias: '子宫平滑肌瘤', location: ['子宫'], treatment: ['观察随访', '药物治疗', '手术治疗'], symptoms: ['月经异常', '腹部肿块', '腹痛', '压迫症状'], treatmentPeriod: '视情况而定', cureRate: '手术可治愈', examinations: ['妇科检查', '超声检查', 'MRI'], departmentId: 31 },
+                    { id: 18, name: '小儿肺炎', followCount: 4620, description: '儿童时期常见的呼吸道感染性疾病，是导致儿童死亡的主要原因之一。临床表现为发热、咳嗽、气促、呼吸困难等。', alias: '儿童肺炎', location: ['肺'], treatment: ['抗感染治疗', '支持治疗', '对症治疗'], symptoms: ['发热', '咳嗽', '气促', '呼吸困难'], treatmentPeriod: '1-2周', cureRate: '多数可治愈', examinations: ['血常规', '胸部X线', '病原学检查'], departmentId: 41 },
+                    { id: 19, name: '小儿腹泻', followCount: 5120, description: '儿童常见的消化道疾病，以大便次数增多和大便性状改变为特点。分为感染性和非感染性两类。', alias: '儿童腹泻', location: ['消化道'], treatment: ['补液治疗', '饮食调理', '对症治疗'], symptoms: ['腹泻', '呕吐', '发热', '脱水'], treatmentPeriod: '3-7天', cureRate: '多数可治愈', examinations: ['大便常规', '血常规', '电解质'], departmentId: 41 },
+                    { id: 20, name: '骨折', followCount: 3760, description: '骨结构的连续性完全或部分断裂，多见于儿童及老年人，中青年人也时有发生。临床表现为局部疼痛、肿胀、畸形、功能障碍等。', alias: '骨裂', location: ['骨骼'], treatment: ['复位固定', '康复训练', '手术治疗'], symptoms: ['疼痛', '肿胀', '畸形', '功能障碍'], treatmentPeriod: '3-6个月', cureRate: '多数可愈合', examinations: ['X线检查', 'CT检查', 'MRI'], departmentId: 51 },
+                    { id: 21, name: '关节炎', followCount: 4230, description: '发生在人体关节及其周围组织的炎性疾病，可分为数十种。临床表现为关节疼痛、肿胀、僵硬、活动受限等。', alias: '关节炎症', location: ['关节'], treatment: ['药物治疗', '物理治疗', '手术治疗'], symptoms: ['关节疼痛', '肿胀', '僵硬', '活动受限'], treatmentPeriod: '长期管理', cureRate: '无法根治，可缓解', examinations: ['血常规', '血沉', '关节X线', '类风湿因子'], departmentId: 52 },
+                    { id: 22, name: '腰椎间盘突出', followCount: 5680, description: '腰椎间盘各部分，尤其是髓核，有不同程度的退行性改变后，在外力因素的作用下，椎间盘的纤维环破裂，髓核组织从破裂之处突出（或脱出）于后方或椎管内，导致相邻脊神经根遭受刺激或压迫。', alias: '腰突', location: ['腰椎'], treatment: ['保守治疗', '物理治疗', '手术治疗'], symptoms: ['腰痛', '下肢放射痛', '麻木', '无力'], treatmentPeriod: '视情况而定', cureRate: '多数可缓解', examinations: ['腰椎CT', '腰椎MRI', 'X线检查'], departmentId: 53 },
+                    { id: 23, name: '脑卒中', followCount: 4890, description: '急性脑血管疾病，是由于脑部血管突然破裂或因血管阻塞导致血液不能流入大脑而引起脑组织损伤。分为缺血性脑卒中和出血性脑卒中。', alias: '中风', location: ['大脑'], treatment: ['溶栓治疗', '抗血小板治疗', '康复治疗'], symptoms: ['肢体无力', '言语不清', '头晕', '视物模糊'], treatmentPeriod: '长期康复', cureRate: '视类型和时机而定', examinations: ['头颅CT', '头颅MRI', '脑血管造影'], departmentId: 61 },
+                    { id: 24, name: '帕金森病', followCount: 2150, description: '一种常见的神经系统变性疾病，老年人多见，平均发病年龄为60岁左右。临床表现为静止性震颤、肌肉僵直、运动迟缓等。', alias: '震颤麻痹', location: ['大脑'], treatment: ['药物治疗', '手术治疗', '康复训练'], symptoms: ['震颤', '肌肉僵直', '运动迟缓', '步态异常'], treatmentPeriod: '长期管理', cureRate: '无法根治，可缓解', examinations: ['神经系统检查', '头颅CT/MRI'], departmentId: 61 },
+                    { id: 25, name: '湿疹', followCount: 3420, description: '一种常见的由多种内外因素引起的表皮及真皮浅层的炎症性皮肤病。临床表现为红斑、丘疹、水疱、瘙痒等。', alias: '湿疮', location: ['皮肤'], treatment: ['外用药物', '口服药物', '避免过敏原'], symptoms: ['皮肤红斑', '丘疹', '水疱', '瘙痒'], treatmentPeriod: '视情况而定', cureRate: '可缓解，易复发', examinations: ['皮肤检查', '过敏原检测'], departmentId: 71 },
+                    { id: 26, name: '银屑病', followCount: 2780, description: '一种慢性炎症性皮肤病，病程较长，有易复发倾向，有的病例几乎终生不愈。临床表现为红色斑块、银白色鳞屑等。', alias: '牛皮癣', location: ['皮肤'], treatment: ['外用药物', '光疗', '系统治疗'], symptoms: ['红色斑块', '银白色鳞屑', '瘙痒'], treatmentPeriod: '长期管理', cureRate: '无法根治，可缓解', examinations: ['皮肤检查', '病理活检'], departmentId: 71 },
+                    { id: 27, name: '白内障', followCount: 3960, description: '晶状体混浊导致的视力障碍，是全球致盲和视力损伤的主要原因之一。临床表现为视力模糊、畏光、视物变暗等。', alias: '晶状体混浊', location: ['眼睛'], treatment: ['手术治疗', '药物辅助'], symptoms: ['视力模糊', '畏光', '视物变暗', '重影'], treatmentPeriod: '手术约1-2小时', cureRate: '手术可治愈', examinations: ['视力检查', '裂隙灯检查', '眼底检查'], departmentId: 81 },
+                    { id: 28, name: '青光眼', followCount: 2340, description: '一组以视乳头萎缩及凹陷、视野缺损及视力下降为共同特征的疾病。病理性眼压增高是主要危险因素。', alias: '绿内障', location: ['眼睛'], treatment: ['药物治疗', '激光治疗', '手术治疗'], symptoms: ['眼痛', '头痛', '视力下降', '视野缺损'], treatmentPeriod: '长期管理', cureRate: '无法根治，可控制', examinations: ['眼压测量', '视野检查', '眼底检查'], departmentId: 81 },
+                    { id: 29, name: '中耳炎', followCount: 3120, description: '累及中耳全部或部分结构的炎性病变，好发于儿童。临床表现为耳痛、听力下降、耳鸣等。', alias: '耳朵发炎', location: ['中耳'], treatment: ['抗感染治疗', '局部用药', '手术治疗'], symptoms: ['耳痛', '听力下降', '耳鸣', '耳流脓'], treatmentPeriod: '1-2周', cureRate: '多数可治愈', examinations: ['耳镜检查', '听力测试'], departmentId: 91 },
+                    { id: 30, name: '鼻炎', followCount: 6780, description: '鼻腔黏膜和黏膜下组织的炎症，表现为充血或者水肿。临床表现为鼻塞、流涕、打喷嚏等。', alias: '鼻黏膜炎症', location: ['鼻腔'], treatment: ['鼻用药物', '口服药物', '避免过敏原'], symptoms: ['鼻塞', '流涕', '打喷嚏', '鼻痒'], treatmentPeriod: '视情况而定', cureRate: '可缓解，易复发', examinations: ['鼻镜检查', '过敏原检测'], departmentId: 91 },
+                    { id: 31, name: '龋齿', followCount: 4560, description: '在细菌感染等多因素作用下，牙体硬组织发生慢性进行性破坏的一种疾病。临床表现为牙齿变色、龋洞形成等。', alias: '蛀牙', location: ['牙齿'], treatment: ['补牙', '根管治疗', '拔牙'], symptoms: ['牙齿变色', '龋洞', '牙痛'], treatmentPeriod: '视情况而定', cureRate: '及时治疗可治愈', examinations: ['口腔检查', 'X线检查'], departmentId: 101 },
+                    { id: 32, name: '牙周炎', followCount: 3820, description: '发生在牙龈、牙周韧带、牙骨质和牙槽骨部位的慢性炎症。临床表现为牙龈出血、牙周袋形成、牙齿松动等。', alias: '牙周病', location: ['牙周组织'], treatment: ['洁治', '刮治', '手术治疗'], symptoms: ['牙龈出血', '口臭', '牙齿松动'], treatmentPeriod: '长期维护', cureRate: '可控制，无法根治', examinations: ['口腔检查', '牙周探诊', 'X线检查'], departmentId: 101 }
+                ]
+            },
+            computed: {
+                // 获取一级科室名称
+                primaryDeptName() {
+                    if (!this.disease) return '';
+                    const secondaryDept = this.getSecondaryDept(this.disease.departmentId);
+                    if (!secondaryDept) return '';
+                    const primaryDept = this.primaryDepartments.find(d => d.id === secondaryDept.parentId);
+                    return primaryDept ? primaryDept.name : '';
+                },
+                // 获取二级科室名称
+                secondaryDeptName() {
+                    if (!this.disease) return '';
+                    const secondaryDept = this.getSecondaryDept(this.disease.departmentId);
+                    return secondaryDept ? secondaryDept.name : '';
+                }
+            },
+            methods: {
+                // 获取二级科室信息
+                getSecondaryDept(id) {
+                    for (const key in this.departments) {
+                        const depts = this.departments[key];
+                        const dept = depts.find(d => d.id === id);
+                        if (dept) return dept;
+                    }
+                    return null;
+                },
+                // 获取URL参数
+                getUrlParam(name) {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    return urlParams.get(name);
+                },
+                // 加载疾病详情
+                loadDisease() {
+                    const id = this.getUrlParam('id');
+                    if (id) {
+                        this.diseaseId = parseInt(id);
+                        this.disease = this.diseases.find(d => d.id === this.diseaseId);
+                        // 初始化关注数量
+                        if (this.disease && this.disease.followCount !== undefined) {
+                            this.diseaseFollowCount = this.disease.followCount;
+                        }
+                    }
+                },
+                // 切换疾病关注状态
+                toggleDiseaseFollow() {
+                    if (this.diseaseFollowed) {
+                        this.diseaseFollowed = false;
+                        this.diseaseFollowCount--;
+                        alert('已取消关注');
+                    } else {
+                        this.diseaseFollowed = true;
+                        this.diseaseFollowCount++;
+                        alert('关注成功');
+                    }
+                }
+            },
+            mounted() {
+                this.loadDisease();
+            }
+        });
+    </script>
+</body>
+</html>

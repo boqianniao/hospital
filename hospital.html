@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>找医院 - 健康之路在线医疗</title>
+    <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+        }
+        /* 内容区域 */
+        .content {
+            width: 1200px;
+            margin: 30px auto;
+        }
+        /* 科室选择区域 */
+        .section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e3f2fd;
+        }
+        /* 一级科室 */
+        .primary-departments {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        .dept-item {
+            padding: 10px 20px;
+            background-color: #f5f7fa;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            color: #333;
+            border: 2px solid transparent;
+        }
+        .dept-item:hover {
+            background-color: #e3f2fd;
+        }
+        .dept-item.active {
+            background-color: #1e88e5;
+            color: white;
+            border-color: #1565c0;
+        }
+        /* 二级科室 */
+        .secondary-departments {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding-left: 20px;
+            border-left: 3px solid #1e88e5;
+        }
+        .sub-dept-item {
+            padding: 8px 16px;
+            background-color: #fafbfc;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+            color: #666;
+            border: 1px solid #e8eef3;
+        }
+        .sub-dept-item:hover {
+            background-color: #e3f2fd;
+            border-color: #1e88e5;
+            color: #1e88e5;
+        }
+        .sub-dept-item.active {
+            background-color: #1e88e5;
+            color: white;
+            border-color: #1565c0;
+        }
+        /* 医院列表 */
+        .hospital-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        .hospital-item {
+            background-color: #fafbfc;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            border: 1px solid #e8eef3;
+        }
+        .hospital-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(30, 136, 229, 0.15);
+            border-color: #1e88e5;
+        }
+        .hospital-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+        .hospital-item h3 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .hospital-item p {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+        .hospital-item .level {
+            display: inline-block;
+            background-color: #e3f2fd;
+            color: #1e88e5;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+        .hospital-item .tags {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            justify-content: center;
+        }
+        .hospital-item .tag {
+            background-color: #fff3e0;
+            color: #f57c00;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        /* 分页 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        .pagination button {
+            padding: 8px 16px;
+            border: 1px solid #e8eef3;
+            background-color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+            transition: all 0.3s;
+        }
+        .pagination button:hover:not(:disabled) {
+            border-color: #1e88e5;
+            color: #1e88e5;
+        }
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .pagination .page-number {
+            display: flex;
+            gap: 5px;
+        }
+        .pagination .page-btn {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+        }
+        .pagination .page-btn.active {
+            background-color: #1e88e5;
+            color: white;
+            border-color: #1e88e5;
+        }
+        .pagination .page-info {
+            margin-left: 15px;
+            color: #999;
+            font-size: 14px;
+        }
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 0;
+            color: #999;
+        }
+        .empty-state img {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        .empty-state p {
+            font-size: 16px;
+        }
+        /* 页脚 */
+        .footer {
+            background-color: #1e88e5;
+            color: white;
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+        .footer-content {
+            width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        .footer-section h4 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #bbdefb;
+        }
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+        .footer-section ul li a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+        .footer-section ul li a:hover {
+            color: white;
+        }
+        .copyright {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+        }
+    </style>
+    <script src="component/Header.vue.js"></script>
+    <script src="component/Footer.vue.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航 -->
+        <header-component :active-nav="'hospital'"></header-component>
+
+        <!-- 内容区域 -->
+        <div class="content">
+            <!-- 科室选择 -->
+            <div class="section">
+                <div class="section-title">选择科室</div>
+                
+                <!-- 一级科室 -->
+                <div class="primary-departments">
+                    <div 
+                        v-for="dept in primaryDepartments" 
+                        :key="dept.id" 
+                        :class="['dept-item', {active: selectedPrimary === dept.id}]"
+                        @click="selectPrimary(dept.id)"
+                    >
+                        {{ dept.name }}
+                    </div>
+                </div>
+
+                <!-- 二级科室 -->
+                <div v-if="selectedPrimary && selectedPrimary !== 0 && secondaryDepartments.length > 0" class="secondary-departments">
+                    <div 
+                        v-for="subDept in secondaryDepartments" 
+                        :key="subDept.id" 
+                        :class="['sub-dept-item', {active: selectedSecondary === subDept.id}]"
+                        @click="selectSecondary(subDept.id)"
+                    >
+                        {{ subDept.name }}
+                    </div>
+                </div>
+
+                <div v-if="selectedPrimary && selectedPrimary !== 0 && secondaryDepartments.length === 0" class="empty-state">
+                    <p>该科室暂未开通预约服务</p>
+                </div>
+            </div>
+
+            <!-- 医院列表 -->
+            <div class="section">
+                <div class="section-title">
+                    {{ selectedSecondaryName || '全部医院' }}
+                    <span v-if="selectedSecondaryName" style="font-weight: normal; font-size: 14px; color: #999; margin-left: 10px;">
+                        共 {{ totalHospitals }} 家医院
+                    </span>
+                </div>
+
+                <div v-if="filteredHospitals.length > 0" class="hospital-list">
+                    <div v-for="hospital in currentPageHospitals" :key="hospital.id" class="hospital-item" @click="goToHospitalDetail(hospital.id)">
+                        <img :src="hospital.image" :alt="hospital.name">
+                        <h3>{{ hospital.name }}</h3>
+                        <p>{{ hospital.address }}</p>
+                        <span class="level">{{ hospital.level }}</span>
+                    </div>
+                </div>
+
+                <div v-else class="empty-state">
+                    <p>暂无符合条件的医院</p>
+                </div>
+
+                <!-- 分页 -->
+                <div v-if="filteredHospitals.length > 0 && totalPages > 1" class="pagination">
+                    <button @click="prevPage" :disabled="currentPage === 1">上一页</button>
+                    <div class="page-number">
+                        <button 
+                            v-for="page in visiblePages" 
+                            :key="page" 
+                            :class="['page-btn', {active: currentPage === page}]"
+                            @click="goToPage(page)"
+                        >
+                            {{ page }}
+                        </button>
+                    </div>
+                    <button @click="nextPage" :disabled="currentPage === totalPages">下一页</button>
+                    <span class="page-info">
+                        第 {{ currentPage }} / {{ totalPages }} 页，共 {{ totalHospitals }} 条
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer-component></footer-component>
+    </div>
+
+    <script>
+        // Header和Footer组件已经在外部引入
+
+        // 主应用
+        new Vue({
+            el: '#app',
+            data: {
+                // 一级科室数据
+                primaryDepartments: [
+                    { id: 0, name: '全部' },
+                    { id: 1, name: '内科' },
+                    { id: 2, name: '外科' },
+                    { id: 3, name: '妇产科' },
+                    { id: 4, name: '儿科' },
+                    { id: 5, name: '骨科' },
+                    { id: 6, name: '神经科' },
+                    { id: 7, name: '皮肤科' },
+                    { id: 8, name: '眼科' },
+                    { id: 9, name: '耳鼻喉科' },
+                    { id: 10, name: '口腔科' }
+                ],
+                // 二级科室数据
+                departments: {
+                    1: [
+                        { id: 11, name: '心内科', parentId: 1 },
+                        { id: 12, name: '呼吸内科', parentId: 1 },
+                        { id: 13, name: '消化内科', parentId: 1 },
+                        { id: 14, name: '肾内科', parentId: 1 },
+                        { id: 15, name: '内分泌科', parentId: 1 },
+                        { id: 16, name: '血液科', parentId: 1 }
+                    ],
+                    2: [
+                        { id: 21, name: '普外科', parentId: 2 },
+                        { id: 22, name: '骨科', parentId: 2 },
+                        { id: 23, name: '心胸外科', parentId: 2 },
+                        { id: 24, name: '神经外科', parentId: 2 },
+                        { id: 25, name: '泌尿外科', parentId: 2 },
+                        { id: 26, name: '肝胆外科', parentId: 2 }
+                    ],
+                    3: [
+                        { id: 31, name: '妇科', parentId: 3 },
+                        { id: 32, name: '产科', parentId: 3 },
+                        { id: 33, name: '生殖医学中心', parentId: 3 }
+                    ],
+                    4: [
+                        { id: 41, name: '小儿内科', parentId: 4 },
+                        { id: 42, name: '小儿外科', parentId: 4 },
+                        { id: 43, name: '新生儿科', parentId: 4 }
+                    ],
+                    5: [
+                        { id: 51, name: '创伤骨科', parentId: 5 },
+                        { id: 52, name: '关节外科', parentId: 5 },
+                        { id: 53, name: '脊柱外科', parentId: 5 },
+                        { id: 54, name: '运动医学科', parentId: 5 }
+                    ],
+                    6: [
+                        { id: 61, name: '神经内科', parentId: 6 },
+                        { id: 62, name: '神经外科', parentId: 6 }
+                    ],
+                    7: [
+                        { id: 71, name: '皮肤科', parentId: 7 }
+                    ],
+                    8: [
+                        { id: 81, name: '眼科', parentId: 8 }
+                    ],
+                    9: [
+                        { id: 91, name: '耳鼻喉科', parentId: 9 }
+                    ],
+                    10: [
+                        { id: 101, name: '口腔科', parentId: 10 }
+                    ]
+                },
+                // 医院数据（关联二级科室）
+                allHospitals: [
+                    { id: 1, name: '北京协和医院', address: '北京市东城区东单北大街', level: '三级甲等', image: 'img/hospital_100001977.jpg', tags: ['医保定点', '全国重点'], departments: [11, 12, 13, 21, 31, 32] },
+                    { id: 2, name: '上海瑞金医院', address: '上海市黄浦区瑞金二路', level: '三级甲等', image: 'img/hospital_14616536073112.jpg', tags: ['医保定点', '教学医院'], departments: [11, 14, 22, 25, 41] },
+                    { id: 3, name: '广州中山医院', address: '广州市越秀区东风西路', level: '三级甲等', image: 'img/hospital_16043929044175.jpg', tags: ['医保定点'], departments: [12, 15, 23, 33, 51] },
+                    { id: 4, name: '杭州浙一医院', address: '杭州市上城区庆春路', level: '三级甲等', image: 'img/hospital_16195932543164.png', tags: ['医保定点', '三甲医院'], departments: [13, 16, 24, 42] },
+                    { id: 5, name: '北京天坛医院', address: '北京市丰台区南四环西路', level: '三级甲等', image: 'img/hospital_100001977.jpg', tags: ['神经科重点'], departments: [61, 62] },
+                    { id: 6, name: '上海华山医院', address: '上海市静安区乌鲁木齐中路', level: '三级甲等', image: 'img/hospital_14616536073112.jpg', tags: ['全国重点'], departments: [11, 61, 22] },
+                    { id: 7, name: '广东省人民医院', address: '广州市越秀区中山二路', level: '三级甲等', image: 'img/hospital_16043929044175.jpg', tags: ['医保定点'], departments: [12, 23, 31, 52] },
+                    { id: 8, name: '南京鼓楼医院', address: '南京市鼓楼区中山路', level: '三级甲等', image: 'img/hospital_16195932543164.png', tags: ['教学医院'], departments: [14, 25, 41, 71] },
+                    { id: 9, name: '武汉同济医院', address: '武汉市硚口区解放大道', level: '三级甲等', image: 'img/hospital_100001977.jpg', tags: ['全国重点'], departments: [11, 13, 21, 32, 53] },
+                    { id: 10, name: '成都华西医院', address: '成都市武侯区国学巷', level: '三级甲等', image: 'img/hospital_14616536073112.jpg', tags: ['全国重点'], departments: [15, 24, 33, 43, 81] },
+                    { id: 11, name: '西安西京医院', address: '西安市新城区长乐西路', level: '三级甲等', image: 'img/hospital_16043929044175.jpg', tags: ['军队医院'], departments: [16, 22, 51, 91] },
+                    { id: 12, name: '天津总医院', address: '天津市和平区鞍山道', level: '三级甲等', image: 'img/hospital_16195932543164.png', tags: ['医保定点'], departments: [12, 26, 41, 101] }
+                ],
+                // 选中状态
+                selectedPrimary: null,
+                selectedSecondary: null,
+                // 分页
+                currentPage: 1,
+                pageSize: 4
+            },
+            computed: {
+                // 获取二级科室列表
+                secondaryDepartments() {
+                    if (!this.selectedPrimary) return [];
+                    return this.departments[this.selectedPrimary] || [];
+                },
+                // 选中的二级科室名称
+                selectedSecondaryName() {
+                    if (!this.selectedSecondary) return '';
+                    const dept = this.secondaryDepartments.find(d => d.id === this.selectedSecondary);
+                    return dept ? dept.name : '';
+                },
+                // 过滤后的医院列表
+                filteredHospitals() {
+                    if (!this.selectedSecondary) return this.allHospitals;
+                    return this.allHospitals.filter(h => h.departments.includes(this.selectedSecondary));
+                },
+                // 总医院数
+                totalHospitals() {
+                    return this.filteredHospitals.length;
+                },
+                // 总页数
+                totalPages() {
+                    return Math.ceil(this.totalHospitals / this.pageSize);
+                },
+                // 当前页医院
+                currentPageHospitals() {
+                    const start = (this.currentPage - 1) * this.pageSize;
+                    const end = start + this.pageSize;
+                    return this.filteredHospitals.slice(start, end);
+                },
+                // 显示的页码
+                visiblePages() {
+                    const pages = [];
+                    const total = this.totalPages;
+                    const current = this.currentPage;
+                    
+                    if (total <= 5) {
+                        for (let i = 1; i <= total; i++) pages.push(i);
+                    } else {
+                        if (current <= 3) {
+                            pages.push(1, 2, 3, 4, 5);
+                        } else if (current >= total - 2) {
+                            pages.push(total - 4, total - 3, total - 2, total - 1, total);
+                        } else {
+                            pages.push(current - 2, current - 1, current, current + 1, current + 2);
+                        }
+                    }
+                    return pages;
+                }
+            },
+            methods: {
+                selectPrimary(id) {
+                    this.selectedPrimary = id;
+                    this.selectedSecondary = null;
+                    this.currentPage = 1;
+                },
+                selectSecondary(id) {
+                    this.selectedSecondary = id;
+                    this.currentPage = 1;
+                },
+                prevPage() {
+                    if (this.currentPage > 1) {
+                        this.currentPage--;
+                    }
+                },
+                nextPage() {
+                    if (this.currentPage < this.totalPages) {
+                        this.currentPage++;
+                    }
+                },
+                goToPage(page) {
+                    this.currentPage = page;
+                },
+                goToHospitalDetail(hospitalId) {
+                    window.location.href = 'hospital-detail.html?hospitalId=' + hospitalId;
+                }
+            },
+            mounted() {
+                // 默认选中第一个一级科室
+                if (this.primaryDepartments.length > 0) {
+                    this.selectPrimary(this.primaryDepartments[0].id);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
