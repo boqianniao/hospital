@@ -419,25 +419,20 @@
                 // 加载数据
                 loadData() {
                     const id = this.getUrlParam('id');
-                    this.orderNo = this.getUrlParam('orderNo');
                     this.payMethod = this.getUrlParam('payMethod') || '支付宝';
                     if (!id) return;
                     http.get('/api/appointments/' + id).then((a) => {
                         this.orderNo = a.orderNo;
-                        this.doctorName = a.doctorName;
-                        this.doctorHospital = a.hospitalName;
-                        this.scheduleDate = a.appointmentDate;
-                        this.timeSlot = a.appointmentTime;
-                        this.patientName = a.patientName;
-                        this.patientPhone = a.patientPhone;
-                        this.patientIdCard = a.patientIdCard;
                         this.amount = Number(a.amount);
-                        if (a.doctorId) {
-                            http.get('/api/doctors/' + a.doctorId).then((d) => {
-                                this.doctorTitle = d.title;
-                                this.doctorDepartment = d.departmentName;
-                            }).catch(() => {});
-                        }
+                        this.doctorName = a.doctorName;
+                        this.doctorTitle = a.doctorTitle || '';
+                        this.doctorDepartment = a.departmentName || '';
+                        this.doctorHospital = a.hospitalName || '';
+                        this.scheduleDate = a.appointmentDate || '';
+                        this.timeSlot = a.appointmentTime || '';
+                        this.patientName = a.patientName || '';
+                        this.patientPhone = a.patientPhone || '';
+                        this.patientIdCard = a.patientIdCard || '';
                     }).catch((err) => {
                         alert(err.message || '加载订单失败');
                     });

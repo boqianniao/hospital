@@ -444,19 +444,14 @@
                     http.get('/api/appointments/' + this.appointmentId).then((a) => {
                         this.orderNo = a.orderNo;
                         this.doctorName = a.doctorName;
+                        this.doctorTitle = a.doctorTitle;  // 直接使用 VO 字段
+                        this.doctorDepartment = a.departmentName;  // 直接使用 VO 字段
                         this.scheduleDate = a.appointmentDate;
                         this.timeSlot = a.appointmentTime;
                         this.patientName = a.patientName;
                         this.patientPhone = a.patientPhone;
                         this.amount = Number(a.amount);
                         this.loading = false;
-                        // 医生职称/科室 AppointmentVO 未返回，补充查询医生详情
-                        if (a.doctorId) {
-                            http.get('/api/doctors/' + a.doctorId).then((d) => {
-                                this.doctorTitle = d.title;
-                                this.doctorDepartment = d.departmentName;
-                            }).catch(() => {});
-                        }
                     }).catch((err) => {
                         alert(err.message || '加载订单失败');
                     });
